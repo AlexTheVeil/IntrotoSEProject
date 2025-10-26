@@ -3,6 +3,8 @@ from django.conf import settings
 from shortuuid.django_fields import ShortUUIDField  # pip install shortuuid
 from django.utils.html import mark_safe
 
+#NOTE: remember to pip install Pillow !!!
+
 STATUS_CHOICE = (
     ("processing", "Processing"),
     ("shipped", "Shipped"),
