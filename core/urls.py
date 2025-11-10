@@ -4,5 +4,5 @@ from core.views import base
 app_name = 'core'
 
 urlpatterns = [
-   path("", base)
+   path("", base, name ="base"),
 ]

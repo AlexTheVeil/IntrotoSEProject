@@ -21,7 +21,8 @@ from core.views import base
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('core.urls')),
-    path("", base)
+    path("", base),
+    path("user/", include("userauths.urls")),
 ]
 
 
