@@ -17,7 +17,11 @@ def base(request):
     return render(request, 'core/base.html',)
 
 def buyer(request):
-    return render(request, 'core/buyer_dashboard.html',)
+    if not request.user.is_authenticated:
+        messages.warning(request, "Must be logged in to view Profile.")
+        return redirect('userauths:login')
+    else:
+        return render(request, 'core/buyer_dashboard.html',)
 
 def seller(request):
     return render(request, 'useradmin/dashboard.html',)
@@ -86,7 +90,8 @@ def add_to_cart_view(request, pid):
 
 def cart_view(request):
     if not request.user.is_authenticated:
-        return redirect('login')
+        messages.warning(request, "Must be logged in to view cart.")
+        return redirect('userauths:login')
 
     order, _ = CartOrder.objects.get_or_create(user=request.user, paid_status=False)
     items = CartOrderItems.objects.filter(order=order)
