@@ -1,4 +1,5 @@
 from pyexpat.errors import messages
+from urllib import request
 from django.shortcuts import render, redirect
 from core.models import CartOrder, Product, Category
 from django.db.models import Sum
@@ -34,44 +35,30 @@ def dashboard_view(request):
     return render(request, 'useradmin/dashboard.html', context)
 
 def add_product_view(request):
-    if request.method == 'POST':
-        # Get form data
-        name = request.POST.get('name')
-        category_id = request.POST.get('category')
-        price = request.POST.get('price')
-        image = request.FILES.get('image')  # For uploaded files
+    categories = Category.objects.all()
 
-        # Basic validation
-        if not name or not category_id or not price:
-            messages.error(request, "Please fill out all required fields.")
-            return redirect('useradmin:add_product')
-        
-        try:
-            category = Category.objects.get(id=category_id)
-        except Category.DoesNotExist:
-            messages.error(request, "Selected category does not exist.")
-            return redirect('useradmin:add_product')
+    if request.method == "POST":
+        name = request.POST.get("name")
+        category_id = request.POST.get("category")
+        price = request.POST.get("price")
+        image = request.FILES.get("image")
 
-        try:
-            price = float(price)
-        except ValueError:
-            messages.error(request, "Invalid price entered.")
-            return redirect('useradmin:add_product')
+        category = Category.objects.filter(id=category_id).first()
+        if not category:
+            messages.error(request, "Please select a valid category.")
+            return redirect("useradmin:add_product")
 
-        # Create the product
         Product.objects.create(
             name=name,
             category=category,
             price=price,
-            image=image
+            image=image,
         )
 
-        messages.success(request, f"Product '{name}' has been added successfully!")
-        return redirect('useradmin:dashboard')  # Back to dashboard
+        messages.success(request, f"Product '{name}' added successfully!")
+        return redirect("useradmin:dashboard")
 
-    # GET request: display the form
-    categories = Category.objects.all()
     context = {
-        'categories': categories
+        "categories": categories,
     }
-    return render(request, 'useradmin/add_product.html', context)
+    return render(request, "useradmin/add_product.html", context)
