@@ -5,6 +5,7 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.shortcuts import render, redirect
+from accounts.models import Account
 
 def signup_view(request):
     if request.user.is_authenticated:
@@ -32,7 +33,8 @@ def login_view(request):
         if form.is_valid():
             user = form.get_user()
             login(request, user)
-            messages.success(request, f"WElcome, {user.username}!")
+            temp = Account.objects.get(user_ID=1)
+            messages.success(request, f"Welcome, {user.username}!")
             return redirect('dashboard')
         else:
             messages.error(request, "invalid username or password. ")
