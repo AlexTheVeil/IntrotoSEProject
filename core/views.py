@@ -5,13 +5,13 @@ from django.http import HttpResponse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import models
-from core.models import Category, Tags, Vendor, Product, ProductImages, CartOrder, CartOrderItems, ProductReview, Wishlist, Address
+from core.models import Category, Tags, Vendor, Product, ProductImages, CartOrder, CartOrderItems, ProductReview, Wishlist, Address, PTCCurrency
 from django.db.models import Q
 from django.http import JsonResponse, HttpResponseNotAllowed
 from django.db.models import Sum
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
-
+from core.utils import spend_ptc_bucks
 
 def base(request):
     return render(request, 'core/base.html',)
@@ -146,9 +146,10 @@ def update_cart_view(request, item_id):
         "removed": action == "remove" or item.qty <= 0
     })
 
-def checkout_view(request): 
+def checkout_view(request):
+    wallet, created = PTCCurrency.objects.get_or_create(user=request.user)
     # Get user's active cart
-    order, created = CartOrder.objects.get_or_create(user=request.user, paid_status=False)
+    order, created_order = CartOrder.objects.get_or_create(user=request.user, paid_status=False)
     items = CartOrderItems.objects.filter(order=order)
     total_price = sum(i.total for i in items)
 
@@ -171,18 +172,7 @@ def checkout_view(request):
             return redirect('core:checkout')
 
         # Save or update the user's address
-        address, _ = Address.objects.get_or_create(
-            user=request.user,
-            defaults={
-                "full_name": full_name,
-                "email": email,
-                "address": address_text,
-                "city": city,
-                "postcode": postcode,
-                "country": country
-            }
-        )
-        # If already exists, update fields
+        address, _ = Address.objects.get_or_create(user=request.user)
         address.full_name = full_name
         address.email = email
         address.address = address_text
@@ -191,23 +181,38 @@ def checkout_view(request):
         address.country = country
         address.save()
 
-        # Here you would integrate your payment processing logic
-        # For now, we just mark the order as paid if payment method is COD
-        if payment_method in ["cod", "card", "paypal"]:  # placeholder
+        # PTC Bucks payment
+        if payment_method == "ptc_bucks":
+            wallet = PTCCurrency.objects.get(user=request.user)
+            if wallet.balance >= total_price:
+                spend_ptc_bucks(request.user, total_price, description="Checkout payment")
+                order.paid_status = True
+                order.payment_method = "PTC Bucks"
+                order.save()
+                messages.success(request, f"Your order has been placed using PTC Bucks! Remaining balance: {wallet.balance - total_price}")
+                return redirect('core:home')
+            else:
+                messages.error(request, "Insufficient PTC Bucks balance.")
+                return redirect('core:checkout')
+
+        # Fallback for other methods (COD, card, PayPal)
+        elif payment_method in ["cod", "card", "paypal"]:
             order.paid_status = True
             order.payment_method = payment_method
             order.save()
-
             messages.success(request, "Your order has been placed successfully!")
             return redirect('core:home')
 
-        messages.error(request, "Invalid payment method.")
-        return redirect('core:checkout')
+        else:
+            messages.error(request, "Invalid payment method.")
+            return redirect('core:checkout')
 
     # GET request – display checkout page
+    wallet = PTCCurrency.objects.get(user=request.user)
     context = {
         "items": items,
         "total_price": total_price,
+        "wallet_balance": wallet.balance,  # show PTC Bucks balance on checkout page
     }
     return render(request, "core/checkout.html", context)
 

@@ -12,8 +12,9 @@
         <!-- Billing & Shipping Form -->
         <div class="checkout-form">
             <h3>Billing & Shipping Information</h3>
-            <form method="POST" action="{% url 'core:place_order' %}">
+            <form method="POST" action="{% url 'core:checkout' %}">
                 {% csrf_token %}
+                
                 <label for="full_name">Full Name</label>
                 <input type="text" id="full_name" name="full_name" required>
 
@@ -33,11 +34,18 @@
                 <input type="text" id="country" name="country" required>
 
                 <h3>Payment Method</h3>
-                <select name="payment_method" id="payment_method" required>
+                <p>Your PTC Bucks balance: <strong>{{ wallet_balance }}</strong></p>
+
+                <select name="payment_method" id="payment_method" required onchange="updatePTCBalance()">
                     <option value="cod">Cash on Delivery</option>
                     <option value="card">Credit/Debit Card</option>
                     <option value="paypal">PayPal</option>
+                    <option value="ptc_bucks" {% if wallet_balance < total_price %}disabled{% endif %}>
+                        Pay with PTC Bucks {% if wallet_balance < total_price %}(Insufficient balance){% endif %}
+                    </option>
                 </select>
+
+                <p id="ptc_message" style="color: green; font-weight: bold; margin-top: 0.5rem;"></p>
 
                 <button type="submit" class="checkout-btn">Place Order</button>
             </form>
@@ -65,7 +73,7 @@
                 </tbody>
             </table>
             <div class="summary-total">
-                <strong>Grand Total:</strong> ${{ total_price }}
+                <strong>Grand Total:</strong> $<span id="grand_total">{{ total_price }}</span>
             </div>
         </div>
     </div>
@@ -74,6 +82,27 @@
     <p>Your cart is empty. Please add items to checkout.</p>
     {% endif %}
 </div>
+
+<script>
+function updatePTCBalance() {
+    const paymentMethod = document.getElementById('payment_method').value;
+    const walletBalance = parseFloat({{ wallet_balance|default:"0" }});
+    const totalPrice = parseFloat({{ total_price|default:"0" }});
+    const ptcMessage = document.getElementById('ptc_message');
+
+    if (paymentMethod === "ptc_bucks") {
+        if (walletBalance >= totalPrice) {
+            ptcMessage.textContent = `You will pay ${totalPrice} PTC Bucks. Remaining balance: ${walletBalance - totalPrice} PTC Bucks.`;
+            ptcMessage.style.color = 'green';
+        } else {
+            ptcMessage.textContent = "Insufficient PTC Bucks!";
+            ptcMessage.style.color = 'red';
+        }
+    } else {
+        ptcMessage.textContent = "";
+    }
+}
+</script>
 
 <style>
 .checkout-container {
