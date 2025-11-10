@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     
     #installed apps
     'core',
+    'userauths',
 ]
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -142,3 +143,5 @@ JAZZMIN_SETTINGS = {
     'site_logo': 'assets/logo.png',
     'copyright': "Puablo's Computer Repair ©"
 }
+
+AUTH_USER_MODEL = 'userauths.User'
