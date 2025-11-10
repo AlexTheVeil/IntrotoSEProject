@@ -8,4 +8,5 @@ urlpatterns = [
    path("", views.base, name ="base"),
    path("home/", views.home, name ="home"),
    path("product/<str:pid>/", views.product_detail_view, name="product_detail"),
+   path("search/", views.search_view, name="search"),
 ]
