@@ -1,0 +1,22 @@
+{% extends "core/base.html" %}
+
+{% block title %}Home - Pablo's Tech Company{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">Our Products</h1>
+
+{% if products %}
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+    {% for product in products %}
+    <div class="border rounded-lg p-4 bg-white shadow-sm">
+        <img src="{{ product.image.url }}" alt="{{ product.name }}" class="h-40 w-full object-cover mb-4 rounded">
+        <h2 class="font-semibold text-lg">{{ product.name }}</h2>
+        <p class="text-gray-700 mt-2">{{ product.description|truncatewords:20 }}</p>
+        <p class="font-bold mt-2">${{ product.price }}</p>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<p class="text-gray-500">No products available at the moment.</p>
+{% endif %}
+{% endblock %}
