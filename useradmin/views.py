@@ -12,6 +12,10 @@ import datetime
 # Create your views here.
 
 def dashboard_view(request):
+    if not request.user.is_authenticated:
+        messages.warning(request, "Must be logged in to view Seller Dashboard.")
+        return redirect('userauths:login')
+    
     products = Product.objects.filter(user=request.user)
     revenue = CartOrder.objects.aggregate(price=Sum('price'))
     total_orders_count = CartOrder.objects.all()

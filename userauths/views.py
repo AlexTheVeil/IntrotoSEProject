@@ -22,7 +22,7 @@ def Register_View(request):
                                     password=form.cleaned_data['password1']
                                     )
             login(request, new_user)
-            return redirect("core:base")
+            return redirect("core:home")
     else:
         form = UserRegisterForm()
         print("User registration failed")
@@ -34,7 +34,8 @@ def Register_View(request):
 
 def login_view(request):
     if request.user.is_authenticated:
-        return redirect("core:base")
+        messages.warning(request, "Already Logged In.")
+        return redirect("core:home")
     
     if request.method == "POST":
         form = UserLoginForm(request.POST)
@@ -46,7 +47,7 @@ def login_view(request):
             if user is not None:
                 login(request, user)
                 messages.success(request, f"Welcome back, {user.username}!")
-                return redirect("core:base")
+                return redirect("core:home")
             else:
                 messages.warning(request, "Invalid email or password.")
                 return redirect("userauths:login")
