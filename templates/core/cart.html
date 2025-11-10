@@ -1,33 +1,101 @@
-<!-- templates/core/cart.html -->
 {% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Your Cart{% endblock %}
 
 {% block content %}
-<h2>Your Cart</h2>
-{% if items %}
-<table>
-    <thead>
-        <tr>
-            <th>Image</th>
-            <th>Product</th>
-            <th>Price</th>
-            <th>Quantity</th>
-            <th>Total</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for item in items %}
-        <tr>
-            <td><img src="{{ item.image }}" width="50" height="50"></td>
-            <td>{{ item.item }}</td>
-            <td>${{ item.price }}</td>
-            <td>{{ item.qty }}</td>
-            <td>${{ item.total }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-<h3>Total: ${{ total_price }}</h3>
-{% else %}
-<p>Your cart is empty.</p>
-{% endif %}
+<div class="cart-container">
+    <h2>Your Shopping Cart</h2>
+
+    {% if items %}
+    <table class="cart-table">
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Image</th>
+                <th>Quantity</th>
+                <th>Item Total</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr id="cart-item-{{ item.id }}">
+                <td>{{ item.item }}</td>
+                <td>
+                    {% if item.image %}
+                        <img src="{{ item.image }}" alt="{{ item.item }}" width="60" height="60">
+                    {% else %}
+                        <img src="{% static 'images/default.png' %}" alt="No image" width="60" height="60">
+                    {% endif %}
+                </td>
+                <td>{{ item.qty }}</td>
+                <td>${{ item.total }}</td>
+                <td>
+                    <button class="cart-item-button" data-item-id="{{ item.id }}" data-action="decrease">−</button>
+                    <button class="cart-item-button" data-item-id="{{ item.id }}" data-action="remove">Remove</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="cart-summary">
+        <p><strong>Total:</strong> $<span id="cart-total">{{ total_price }}</span></p>
+    </div>
+
+    {% else %}
+    <p>Your cart is empty.</p>
+    {% endif %}
+</div>
+
+<!-- Link to your JS file -->
+<script src="{% static 'js/cart.js' %}"></script>
+
+<style>
+.cart-container {
+    width: 80%;
+    margin: 2rem auto;
+    background: #f7f7f7;
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+.cart-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+}
+.cart-table th, .cart-table td {
+    border: 1px solid #ccc;
+    text-align: center;
+    padding: 0.75rem;
+}
+.cart-table th {
+    background: #e0e0e0;
+}
+.cart-summary {
+    text-align: right;
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+button.reduce-btn, button.remove-btn {
+    background-color: #1976d2;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    margin: 0 3px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+button.remove-btn {
+    background-color: #d32f2f;
+}
+button.reduce-btn:hover {
+    background-color: #1565c0;
+}
+button.remove-btn:hover {
+    background-color: #b71c1c;
+}
+</style>
 {% endblock %}

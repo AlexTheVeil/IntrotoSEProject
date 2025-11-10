@@ -1,0 +1,64 @@
+/* General table styling */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+th, td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background-color: #f4f4f4;
+}
+
+/* Buttons */
+button {
+    padding: 5px 10px;
+    margin: 0 2px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #fff;
+}
+
+.reduce-btn {
+    background-color: #f0ad4e; /* orange */
+}
+
+.remove-btn {
+    background-color: #d9534f; /* red */
+}
+
+button:hover {
+    opacity: 0.85;
+}
+
+/* Cart total */
+h3 {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+/* Responsive table */
+@media (max-width: 768px) {
+    table, thead, tbody, th, td, tr {
+        display: block;
+    }
+    th {
+        display: none;
+    }
+    td {
+        padding: 10px;
+        position: relative;
+    }
+    td:before {
+        content: attr(data-label);
+        position: absolute;
+        left: 10px;
+        font-weight: bold;
+    }
+}

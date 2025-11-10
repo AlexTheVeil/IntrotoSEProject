@@ -1,4 +1,5 @@
 from decimal import Decimal
+import json
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.contrib import messages
@@ -8,6 +9,9 @@ from core.models import Category, Tags, Vendor, Product, ProductImages, CartOrde
 from django.db.models import Q
 from django.http import JsonResponse, HttpResponseNotAllowed
 from django.db.models import Sum
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
+
 
 def base(request):
     return render(request, 'core/base.html',)
@@ -41,32 +45,20 @@ def search_view(request):
     return render(request, 'core/search.html', context)
 
 def add_to_cart_view(request, pid):
-    # Only allow POST requests
     if request.method != 'POST':
         return HttpResponseNotAllowed(['POST'])
 
-    # Get product safely
     product = get_object_or_404(Product, pid=pid)
+    qty = int(request.POST.get('qty', 1)) if request.POST.get('qty') else 1
 
-    # Get quantity from POST data, default to 1
-    try:
-        qty = int(request.POST.get('qty', 1))
-        if qty < 1:
-            qty = 1
-    except ValueError:
-        qty = 1
-
-    # Ensure user is authenticated
     if not request.user.is_authenticated:
-        return JsonResponse({'success': False, 'error': 'You must be logged in to add items to cart.'})
+        return JsonResponse({'success': False, 'error': 'Login required.'})
 
-    # Get or create the current unpaid cart for the user
     order, _ = CartOrder.objects.get_or_create(user=request.user, paid_status=False)
 
-    # Get or create the item in the cart
     item, created = CartOrderItems.objects.get_or_create(
         order=order,
-        item=product.title,  # Use product title for CartOrderItems.item
+        item=product.title,
         defaults={
             'invoice_no': f'INV{order.id}{product.pid}',
             'image': product.image.url if product.image else '',
@@ -77,28 +69,68 @@ def add_to_cart_view(request, pid):
         }
     )
 
-    # If item already exists, update quantity and total
     if not created:
         item.qty += qty
         item.total = item.price * item.qty
         item.save()
 
-    # Calculate total quantity in cart
     total_qty = CartOrderItems.objects.filter(order=order).aggregate(total_qty=Sum('qty'))['total_qty'] or 0
-
     return JsonResponse({'success': True, 'product_name': product.title, 'new_cart_count': total_qty})
+
 
 def cart_view(request):
     if not request.user.is_authenticated:
-        return redirect('login')  # Or wherever you want unauthenticated users to go
-    
-    order, created = CartOrder.objects.get_or_create(user=request.user, paid_status=False)
+        return redirect('login')
+
+    order, _ = CartOrder.objects.get_or_create(user=request.user, paid_status=False)
     items = CartOrderItems.objects.filter(order=order)
-    
-    total_price = sum(item.total for item in items)
-    
-    context = {
-        'items': items,
-        'total_price': total_price
-    }
+    total_price = sum(i.total for i in items)
+
+    context = {'items': items, 'total_price': total_price}
     return render(request, 'core/cart.html', context)
+
+
+def update_cart_view(request, item_id):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    try:
+        item = CartOrderItems.objects.get(id=item_id)
+    except CartOrderItems.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Item not found"})
+
+    try:
+        data = json.loads(request.body)
+        action = data.get("action")
+    except json.JSONDecodeError:
+        return JsonResponse({"success": False, "error": "Invalid JSON"})
+
+    if action == "increase":
+        item.qty += 1
+        item.total = item.price * item.qty
+        item.save()
+
+    elif action == "decrease":
+        item.qty -= 1
+        if item.qty > 0:
+            item.total = item.price * item.qty
+            item.save()
+        else:
+            item.delete()
+
+    elif action == "remove":
+        item.delete()
+    else:
+        return JsonResponse({"success": False, "error": "Invalid action"})
+
+    order = item.order if item.id else CartOrder.objects.get(id=item.order.id)
+    cart_items = CartOrderItems.objects.filter(order=order)
+    cart_total = sum(i.total for i in cart_items)
+
+    return JsonResponse({
+        "success": True,
+        "qty": item.qty if action != "remove" and item.id else 0,
+        "item_total": item.total if action != "remove" and item.id else 0,
+        "cart_total": cart_total,
+        "removed": action == "remove" or item.qty <= 0
+    })

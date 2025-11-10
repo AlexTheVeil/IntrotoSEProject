@@ -123,15 +123,20 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
+BASE_DIR = Path(__file__).resolve().parent.parent
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_URL = '/static/'
 
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'core\static')]
+# This is where Django will collect static files when you run `python manage.py collectstatic`
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# These are directories Django will search for additional static files during development
+STATICFILES_DIRS = [
+    BASE_DIR / 'core' / 'static',
+]
 
 MEDIA_URL = '/media/'
-
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
