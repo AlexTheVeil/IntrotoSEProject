@@ -1,13 +1,39 @@
 from django.contrib import admin
-from userauths.models import User
+from core.models import Category, Tags, Vendor, Product, ProductImages, CartOrder, CartOrderItems, ProductReview, Wishlist, Address
 
-#remember to pip instal django-jazzmin
-#super user info: user: crowofvictoria@gmail.com, pass: password123
-# Register your models here.
+class ProductImagesAdmin(admin.TabularInline):
+    model = ProductImages
 
-class UserAdmin(admin.ModelAdmin):
-    list_display = ('email', 'username', 'is_staff', 'is_active')
-    search_fields = ('email', 'username')
-    ordering = ('email',)
+class ProductAdmin(admin.ModelAdmin):
+    inlines = [ProductImagesAdmin]
+    list_display = ['user', 'title', 'category', 'price','product_image', 'featured', 'product_status',]
 
-admin.site.register(User, UserAdmin)
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ['title', 'category_image',]
+
+class VendorAdmin(admin.ModelAdmin):
+    list_display = ['title', 'vendor_image',]
+
+class CartOrderAdmin(admin.ModelAdmin):
+    list_display = ['user', 'price', 'paid_status', 'order_date', 'product_status']
+
+class CartOrderItemsAdmin(admin.ModelAdmin):
+    list_display = ['order', 'invoice_no', 'image', 'item', 'qty', 'price', 'total']
+
+class ProductReviewAdmin(admin.ModelAdmin):
+    list_display = ['user', 'product', 'rating', 'review', 'date']
+
+class wishlistAdmin(admin.ModelAdmin):
+    list_display = ['user', 'product', 'date']
+
+class AddressAdmin(admin.ModelAdmin):
+    list_display = ['user', 'address', 'status']
+
+admin.site.register(Product, ProductAdmin)
+admin.site.register(Category, CategoryAdmin)
+admin.site.register(Vendor, VendorAdmin)
+admin.site.register(CartOrder, CartOrderAdmin)
+admin.site.register(CartOrderItems, CartOrderItemsAdmin)
+admin.site.register(ProductReview, ProductReviewAdmin)
+admin.site.register(Wishlist, wishlistAdmin)
+admin.site.register(Address, AddressAdmin)
