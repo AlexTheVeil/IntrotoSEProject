@@ -134,3 +134,89 @@ def update_cart_view(request, item_id):
         "cart_total": cart_total,
         "removed": action == "remove" or item.qty <= 0
     })
+
+def checkout_view(request): 
+    # Get user's active cart
+    order, created = CartOrder.objects.get_or_create(user=request.user, paid_status=False)
+    items = CartOrderItems.objects.filter(order=order)
+    total_price = sum(i.total for i in items)
+
+    if not items:
+        messages.info(request, "Your cart is empty.")
+        return redirect('core:cart')
+
+    if request.method == "POST":
+        # Collect form data
+        full_name = request.POST.get("full_name")
+        email = request.POST.get("email")
+        address_text = request.POST.get("address")
+        city = request.POST.get("city")
+        postcode = request.POST.get("postcode")
+        country = request.POST.get("country")
+        payment_method = request.POST.get("payment_method")
+
+        if not all([full_name, email, address_text, city, postcode, country, payment_method]):
+            messages.error(request, "Please fill in all required fields.")
+            return redirect('core:checkout')
+
+        # Save or update the user's address
+        address, _ = Address.objects.get_or_create(
+            user=request.user,
+            defaults={
+                "full_name": full_name,
+                "email": email,
+                "address": address_text,
+                "city": city,
+                "postcode": postcode,
+                "country": country
+            }
+        )
+        # If already exists, update fields
+        address.full_name = full_name
+        address.email = email
+        address.address = address_text
+        address.city = city
+        address.postcode = postcode
+        address.country = country
+        address.save()
+
+        # Here you would integrate your payment processing logic
+        # For now, we just mark the order as paid if payment method is COD
+        if payment_method in ["cod", "card", "paypal"]:  # placeholder
+            order.paid_status = True
+            order.payment_method = payment_method
+            order.save()
+
+            messages.success(request, "Your order has been placed successfully!")
+            return redirect('core:home')
+
+        messages.error(request, "Invalid payment method.")
+        return redirect('core:checkout')
+
+    # GET request – display checkout page
+    context = {
+        "items": items,
+        "total_price": total_price,
+    }
+    return render(request, "core/checkout.html", context)
+
+def place_order_view(request):
+    if request.method == "POST":
+        user = request.user
+        order = CartOrder.objects.filter(user=user, paid_status=False).first()
+        if not order or not order.items.exists():
+            messages.error(request, "Your cart is empty.")
+            return redirect("core:cart")
+
+        # You can capture billing info here
+        email = request.POST.get("email")
+        address = request.POST.get("address")
+        
+        order.email = email
+        order.address = address
+        order.paid_status = True  # mark as paid / processed
+        order.save()
+
+        messages.success(request, "Order placed successfully!")
+        return redirect("core:home")
+    return redirect("core:checkout")
