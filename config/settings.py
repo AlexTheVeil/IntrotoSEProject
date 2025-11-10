@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     #installed apps
     'core',
     'userauths',
+    'useradmin',
 ]
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
