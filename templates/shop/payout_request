@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Request Payout{% endblock %}
+{% block content %}
+  <div class="max-w-md mx-auto bg-white border rounded-xl p-6">
+    <h1 class="text-2xl font-semibold mb-4">Request Payout</h1>
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+      <div>
+        <label class="block text-sm font-medium mb-1">Start date</label>
+        {{ form.period_start.errors }}
+        {{ form.period_start }}
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">End date</label>
+        {{ form.period_end.errors }}
+        {{ form.period_end }}
+      </div>
+      <button class="rounded bg-black text-white px-4 py-2">Submit</button>
+    </form>
+  </div>
+{% endblock %}

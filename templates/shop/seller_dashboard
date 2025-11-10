@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Seller Dashboard{% endblock %}
+{% block content %}
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-semibold">Seller Dashboard</h1>
+    <div class="space-x-2">
+      <a class="rounded border px-3 py-2 hover:bg-gray-50" href="{% url 'shop:payout_list' %}">Payouts</a>
+      <a class="rounded bg-black text-white px-3 py-2" href="{% url 'shop:payout_request' %}">Request Payout</a>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+    <div class="rounded-xl border bg-white p-4">
+      <div class="text-sm text-gray-500">Revenue (last 30 days)</div>
+      <div class="text-2xl font-semibold">${{ last_30_total|default:"0.00" }}</div>
+    </div>
+    <div class="rounded-xl border bg-white p-4">
+      <div class="text-sm text-gray-500">Lifetime Revenue</div>
+      <div class="text-2xl font-semibold">${{ lifetime_total|default:"0.00" }}</div>
+    </div>
+    <div class="rounded-xl border bg-white p-4">
+      <div class="text-sm text-gray-500">Top Product (last 30d)</div>
+      <div class="text-lg">
+        {% if top and top.0 %}{{ top.0.product__name }} — ${{ top.0.amount }}{% else %}<span class="text-gray-400">—</span>{% endif %}
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="rounded-xl border bg-white p-4 mb-8">
+    <h2 class="font-medium mb-3">Daily Revenue (last 30 days)</h2>
+    <canvas id="revChart" height="120"></canvas>
+  </div>
+
+ 
+  <div class="rounded-xl border bg-white overflow-x-auto">
+    <table class="min-w-full text-sm">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="text-left p-3">Product</th>
+          <th class="text-left p-3">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in top %}
+          <tr class="border-t">
+            <td class="p-3">{{ row.product__name }}</td>
+            <td class="p-3">${{ row.amount }}</td>
+          </tr>
+        {% empty %}
+          <tr><td class="p-3 text-gray-500" colspan="2">No sales yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+ 
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <script>
+    const series = {{ daily|safe }}; // [{day: "2025-10-10", amount: "123.45"}, ...]
+    const labels = series.map(x => x.day);
+    const data = series.map(x => Number(x.amount));
+
+    const ctx = document.getElementById('revChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: { labels, datasets: [{ label: 'Revenue', data }] },
+      options: {
+        tension: 0.2,
+        scales: { y: { beginAtZero: true } },
+        plugins: { legend: { display: false } }
+      }
+    });
+  </script>
+{% endblock %}
