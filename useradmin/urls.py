@@ -7,4 +7,5 @@ app_name = "useradmin"
 urlpatterns = [
     path("dashboard/", views.dashboard_view, name="dashboard"),
     path('add-product/', views.add_product_view, name='add_product'), 
+    path('edit-product/<str:pid>/', views.edit_product, name='edit_product'),
 ]

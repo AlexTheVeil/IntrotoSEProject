@@ -8,62 +8,103 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
 </head>
-<body>
+<body class="bg-light">
+
+    <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container-fluid">
-            <a class="navbar-brand" href="#">Vendor Dashboard</a>
+            <a class="navbar-brand fw-bold" href="#">Vendor Dashboard</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'userauths:logout' %}">Logout</a>
+                        <a class="nav-link text-light" href="{% url 'userauths:logout' %}">Logout</a>
                     </li>
                 </ul>
             </div>
         </div>
     </nav>
 
-
-    <div class="d-flex justify-content-end mb-3">
-        <a href="{% url 'useradmin:add_product' %}" class="btn btn-primary">Add Product</a>
-    </div>
+    <!-- Dashboard Content -->
     <div class="container mt-4">
-        <!-- Dashboard Cards -->
+
+        <!-- Header Row -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="fw-bold">Your Products</h2>
+            <a href="{% url 'useradmin:add_product' %}" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> Add Product
+            </a>
+        </div>
+
+        <!-- Product Cards -->
+        <div class="row">
+            {% for product in products %}
+            <div class="col-md-4 mb-4">
+                <div class="card shadow-sm h-100">
+                    {% if product.image %}
+                    <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.title }}" style="height:200px; object-fit:cover;">
+                    {% else %}
+                    <img src="{% static 'images/default_product.jpg' %}" class="card-img-top" alt="Default Image" style="height:200px; object-fit:cover;">
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">{{ product.title }}</h5>
+                        <p class="card-text text-muted">{{ product.description|truncatewords:15 }}</p>
+                        <p class="mb-1"><strong>Price:</strong> ${{ product.price }}</p>
+                        <p class="text-secondary small mb-2"><strong>Status:</strong> {{ product.product_status|capfirst }}</p>
+
+                        {% if product.pid %}
+                        <a href="{% url 'useradmin:edit_product' pid=product.pid %}" class="btn btn-warning btn-sm text-dark">
+                            <i class="bi bi-pencil-square"></i> Edit
+                        </a>
+                        {% else %}
+                        <span class="text-muted small">Invalid Product ID</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-muted">You haven’t added any products yet.</p>
+            {% endfor %}
+        </div>
+
+        <!-- Dashboard Summary -->
+        <hr class="my-5">
         <div class="row mb-4">
             <div class="col-md-4">
-                <div class="card text-white bg-success">
+                <div class="card text-white bg-success shadow-sm">
                     <div class="card-body">
                         <h5 class="card-title">Monthly Revenue</h5>
-                        <p class="card-text">${{ montly_revenue.price|default:"0.00" }}</p>
+                        <p class="card-text fs-5">${{ montly_revenue.price|default:"0.00" }}</p>
                     </div>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="card text-white bg-info">
+                <div class="card text-white bg-info shadow-sm">
                     <div class="card-body">
                         <h5 class="card-title">Total Orders</h5>
-                        <p class="card-text">{{ latest_orders|length }}</p>
+                        <p class="card-text fs-5">{{ latest_orders|length }}</p>
                     </div>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="card text-white bg-warning">
+                <div class="card text-white bg-warning shadow-sm">
                     <div class="card-body">
                         <h5 class="card-title">Pending Orders</h5>
+                        <p class="card-text fs-5">--</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Latest Orders Table -->
-        <div class="card mb-4">
+        <!-- Latest Orders -->
+        <div class="card mb-5 shadow-sm">
             <div class="card-header bg-dark text-white">
                 Latest Orders
             </div>
             <div class="card-body table-responsive">
-                <table class="table table-striped table-hover">
+                <table class="table table-striped table-hover align-middle">
                     <thead>
                         <tr>
                             <th>#</th>
@@ -90,4 +131,15 @@
                             </td>
                             <td>{{ order.order_date|date:"M d, Y H:i" }}</td>
                         </tr>
-                        {% endfor %}                
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+</body>
+</html>
