@@ -1,7 +1,56 @@
+{% load static %}
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{% block title %}Pablo's Tech Company{% endblock %}</title>
+
+ 
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body class="bg-gray-50 text-gray-900">
+
+  <header class="border-b bg-white">
+    <div class="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
+      <a href="/" class="font-semibold">Pablo's Tech Company</a>
+      <nav class="text-sm space-x-4">
+        <a href="/home/">Home</a>
+        <a href="/user/register/">Register</a>
+        <a href="/user/login/">Login</a>
+        <a href="/user/logout/">Logout</a>
+        <a href="/cart/">Cart{% if cart_count %} ({{ cart_count }}){% endif %}</a>
+        <a href="/useradmin/dashboard/">Seller Dashboard</a>
+        <a href ="/buyer/">Profile</a>
+      </nav>
+    </div>
+  </header>
+
+
+  {% if messages %}
+    <div class="max-w-5xl mx-auto px-4 mt-4 space-y-2">
+      {% for m in messages %}
+        <div class="rounded-md border px-4 py-2 text-sm {% if m.tags == 'error' %}border-red-300 bg-red-50 text-red-800{% else %}border-emerald-300 bg-emerald-50 text-emerald-800{% endif %}">
+          {{ m }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  
+  <main class="max-w-5xl mx-auto px-4 py-8">
+    {% block content %}{% endblock %}
+  </main>
+
+</body>
+</html>
+
 <form method="POST" action="{% url 'userauths:login' %}">
     {% csrf_token %}
     {{ form.as_p }}
-    <button type="submit">Login</button>
+    <button style = "border-radius: 8px; background-color: #008CBA", type="submit">Login</button>
 </form>
 
 {% if messages %}
@@ -13,3 +62,5 @@
 {% endif %}
 
 <p>Don't have an account? <a href="{% url 'userauths:register' %}">Register here</a></p>
+
+<footer class="text-center text-xs text-gray-500 py-6">© {{ now|date:"Y" }} Pablo's Tech Company</footer>

@@ -16,6 +16,12 @@ from django.views.decorators.csrf import csrf_exempt
 def base(request):
     return render(request, 'core/base.html',)
 
+def buyer(request):
+    return render(request, 'core/buyer_dashboard.html',)
+
+def seller(request):
+    return render(request, 'useradmin/dashboard.html',)
+
 def home(request):
     # Only show active products, newest first
     products = Product.objects.filter(status=True).order_by('-date')
