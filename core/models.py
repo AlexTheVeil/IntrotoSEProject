@@ -192,4 +192,29 @@ class Address(models.Model):
     status = models.BooleanField(default=False)
 
 
+############################# PTC Bucks ###################################
+
+class PTCCurrency(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.balance} PTC Bucks"
+
+class PTCCurrencyTransaction(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    transaction_type = models.CharField(
+        max_length=20,
+        choices=(
+            ('credit', 'Credit'),
+            ('debit', 'Debit')
+        )
+    )
+    description = models.TextField(blank=True, null=True)
+    date = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username}: {self.amount} ({self.transaction_type})"
+
         
