@@ -1,0 +1,58 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-10 px-4">
+
+    <!-- Product Name -->
+    <h1 class="text-3xl font-bold mb-4">{{ product.name }}</h1>
+
+    <!-- Product Image Slider -->
+    <div id="slider" class="relative w-full h-96 overflow-hidden rounded-lg mb-6">
+        {% if product.images.all %}
+            {% for img in product.images.all %}
+                <img src="{{ img.image.url }}" alt="{{ product.name }}" class="absolute inset-0 w-full h-full object-cover transition-opacity duration-500 {% if forloop.first %}opacity-100{% else %}opacity-0{% endif %}">
+            {% endfor %}
+        {% elif product.image %}
+            <img src="{{ product.image.url }}" alt="{{ product.name }}" class="w-full h-full object-cover rounded-lg">
+        {% else %}
+            <div class="w-full h-full bg-gray-200 flex items-center justify-center rounded-lg">
+                <span class="text-gray-500">No image available</span>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Product Description -->
+    <p class="text-gray-700 mb-4">{{ product.description }}</p>
+    <p class="text-xl font-semibold mb-6">Price: ${{ product.price }}</p>
+
+    <!-- Action Buttons -->
+    <div class="flex space-x-4">
+        <a href="{% url 'core:home' %}" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
+            Back to Products
+        </a>
+        <!-- Only render add to cart if view exists -->
+        {% if 'add_to_cart' in urls %}
+        <a href="{% url 'core:add_to_cart' product.id %}" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition">
+            Add to Cart
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Slider Script -->
+<script>
+const slider = document.getElementById('slider');
+if(slider){
+    const slides = slider.children;
+    let current = 0;
+
+    setInterval(() => {
+        slides[current].classList.remove('opacity-100');
+        slides[current].classList.add('opacity-0');
+        current = (current + 1) % slides.length;
+        slides[current].classList.remove('opacity-0');
+        slides[current].classList.add('opacity-100');
+    }, 4000);
+}
+</script>
+{% endblock %}

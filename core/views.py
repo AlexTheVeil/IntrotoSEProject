@@ -19,4 +19,11 @@ def home(request):
     }
     return render(request, 'core/home.html', context)
 
+def product_detail_view(request, pid):
+    product = Product.objects.get(pid=pid)
 
+    context = {
+        'product': product,
+    }
+
+    return render(request, 'core/product_detail.html', context)
