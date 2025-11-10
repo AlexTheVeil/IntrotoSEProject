@@ -6,5 +6,5 @@ from django.contrib.auth.decorators import login_required
 from django.db import models
 
 def index(request):
-    return HttpResponse("Welcome to the Core App!")
+    return render(request, 'core/index.html')
 
