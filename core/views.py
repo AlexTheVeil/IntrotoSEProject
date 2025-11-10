@@ -4,8 +4,7 @@ from django.http import HttpResponse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import models
-from .forms import ProductForm
-from .models import Product
 
-
+def index(request):
+    return HttpResponse("Welcome to the Core App!")
 
