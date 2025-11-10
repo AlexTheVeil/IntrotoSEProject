@@ -39,7 +39,7 @@ class Category(models.Model):
         verbose_name_plural = "Categories"
 
     def category_image(self):
-        return mark_safe(f'<img src="{self.image.url}" width="50" height="50" />' % (self.image.url))
+        return mark_safe(f'<img src="{self.image.url}" width="50" height="50" />')
         
     def __str__(self):
         return self.title

@@ -40,33 +40,33 @@
 
         <!-- Product Cards -->
         <div class="row">
-            {% for product in products %}
-            <div class="col-md-4 mb-4">
-                <div class="card shadow-sm h-100">
-                    {% if product.image %}
-                    <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.title }}" style="height:200px; object-fit:cover;">
-                    {% else %}
-                    <img src="{% static 'images/default_product.jpg' %}" class="card-img-top" alt="Default Image" style="height:200px; object-fit:cover;">
-                    {% endif %}
-                    <div class="card-body">
-                        <h5 class="card-title">{{ product.title }}</h5>
-                        <p class="card-text text-muted">{{ product.description|truncatewords:15 }}</p>
-                        <p class="mb-1"><strong>Price:</strong> ${{ product.price }}</p>
-                        <p class="text-secondary small mb-2"><strong>Status:</strong> {{ product.product_status|capfirst }}</p>
-
-                        {% if product.pid %}
-                        <a href="{% url 'useradmin:edit_product' pid=product.pid %}" class="btn btn-warning btn-sm text-dark">
-                            <i class="bi bi-pencil-square"></i> Edit
-                        </a>
+           {% for product in products %}
+                <div class="col-md-4 mb-4">
+                    <div class="card shadow-sm h-100">
+                        {% if product.image %}
+                        <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.title }}" style="height:200px; object-fit:cover;">
                         {% else %}
-                        <span class="text-muted small">Invalid Product ID</span>
+                        <img src="{% static 'images/default_product.jpg' %}" class="card-img-top" alt="Default Image" style="height:200px; object-fit:cover;">
                         {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ product.title }}</h5>
+                            <p class="card-text text-muted">{{ product.description|truncatewords:15 }}</p>
+                            <p class="mb-1"><strong>Price:</strong> ${{ product.price }}</p>
+                            <p class="text-secondary small mb-2"><strong>Status:</strong> {{ product.product_status|capfirst }}</p>
+
+                            {% if product.pid %}
+                            <a href="{% url 'useradmin:edit_product' pid=product.pid %}" class="btn btn-warning btn-sm text-dark">
+                                <i class="bi bi-pencil-square"></i> Edit
+                            </a>
+                            {% else %}
+                            <span class="text-muted small">Invalid Product ID</span>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
-            </div>
-            {% empty %}
-            <p class="text-muted">You haven’t added any products yet.</p>
-            {% endfor %}
+                {% empty %}
+                <p class="text-muted">You haven’t added any products yet.</p>
+                {% endfor %}
         </div>
 
         <!-- Dashboard Summary -->

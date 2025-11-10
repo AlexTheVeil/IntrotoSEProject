@@ -5,6 +5,7 @@ from core.models import CartOrder, Product, Category
 from django.db.models import Sum
 from userauths.models import User
 from userauths.views import login_view, logout_view, Register_View
+from django.contrib import messages
 
 import datetime
 
@@ -34,36 +35,45 @@ def dashboard_view(request):
         'products' : products,
     }
     
-    return render(request, 'useradmin/dashboard.html', context)
+    return render(request, "useradmin/dashboard.html", context)
 
 def add_product_view(request):
-    categories = Category.objects.all()
-
     if request.method == "POST":
-        name = request.POST.get("name")
-        category_id = request.POST.get("category")
+        title = request.POST.get("title")
+        category_cid = request.POST.get("category")
         price = request.POST.get("price")
         image = request.FILES.get("image")
 
-        category = Category.objects.filter(id=category_id).first()
-        if not category:
-            messages.error(request, "Please select a valid category.")
-            return redirect("useradmin:add_product")
+        if not title or not category_cid or not price or not image:
+            messages.error(request, "All fields are required.")
+            return redirect('useradmin:add_product')
 
-        Product.objects.create(
-            name=name,
+        try:
+            price = float(price)
+            if price < 0:
+                messages.error(request, "Price cannot be negative.")
+                return redirect('useradmin:add_product')
+        except ValueError:
+            messages.error(request, "Invalid price format.")
+            return redirect('useradmin:add_product')
+
+        category = get_object_or_404(Category, cid=category_cid)
+
+        product = Product(
+            title=title,
             category=category,
             price=price,
             image=image,
+            user=request.user  # set current user
         )
+        product.save()
 
-        messages.success(request, f"Product '{name}' added successfully!")
-        return redirect("useradmin:dashboard")
+        messages.success(request, f"Product '{title}' added successfully!")
+        return redirect('useradmin:dashboard')
 
-    context = {
-        "categories": categories,
-    }
-    return render(request, "useradmin/add_product.html", context)
+    # GET request: show form
+    categories = Category.objects.all()
+    return render(request, "useradmin/add_product.html", {"categories": categories})
 
 def edit_product(request, pid):
     product = get_object_or_404(Product, pid=pid)
