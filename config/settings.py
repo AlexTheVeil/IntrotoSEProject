@@ -74,7 +74,7 @@ TEMPLATES = [
 ]
 
 LOGIN_REDIRECT_URL = 'dashboard'
-LOGOUT_REDIRECT_URL = 'login'
+LOGOUT_REDIRECT_URL = 'core:home'
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
