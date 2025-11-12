@@ -1,7 +1,7 @@
 from pyexpat.errors import messages
 from urllib import request
 from django.shortcuts import render, redirect, get_object_or_404
-from core.models import CartOrder, Product, Category
+from core.models import CartOrder, Product, Category, PTCCurrencyTransaction
 from django.db.models import Sum
 from userauths.models import User
 from userauths.views import login_view, logout_view, Register_View
@@ -23,6 +23,7 @@ def dashboard_view(request):
     all_categories = Category.objects.all()
     new_customers = User.objects.all()
     latest_orders = CartOrder.objects.order_by('-order_date')[:5]
+    ptc_credits = PTCCurrencyTransaction.objects.filter(user=request.user,transaction_type='credit').aggregate(total_earned=Sum('amount'))['total_earned'] or 0
 
     this_month = datetime.datetime.now().month
 
@@ -37,6 +38,7 @@ def dashboard_view(request):
         'latest_orders': latest_orders,
         'montly_revenue': montly_revenue,
         'products' : products,
+        'ptc_credits': ptc_credits,
     }
     
     return render(request, "useradmin/dashboard.html", context)

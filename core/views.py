@@ -147,9 +147,8 @@ def update_cart_view(request, item_id):
     })
 
 def checkout_view(request):
-    wallet, created = PTCCurrency.objects.get_or_create(user=request.user)
-    # Get user's active cart
-    order, created_order = CartOrder.objects.get_or_create(user=request.user, paid_status=False)
+    wallet, _ = PTCCurrency.objects.get_or_create(user=request.user)
+    order, _ = CartOrder.objects.get_or_create(user=request.user, paid_status=False)
     items = CartOrderItems.objects.filter(order=order)
     total_price = sum(i.total for i in items)
 
@@ -183,36 +182,49 @@ def checkout_view(request):
 
         # PTC Bucks payment
         if payment_method == "ptc_bucks":
-            wallet = PTCCurrency.objects.get(user=request.user)
-            if wallet.balance >= total_price:
+            buyer_wallet = PTCCurrency.objects.get(user=request.user)
+
+            if buyer_wallet.balance >= total_price:
+                # Deduct from buyer
                 spend_ptc_bucks(request.user, total_price, description="Checkout payment")
+
+                # Mark order as paid
                 order.paid_status = True
                 order.payment_method = "PTC Bucks"
                 order.save()
-                messages.success(request, f"Your order has been placed using PTC Bucks! Remaining balance: {wallet.balance - total_price}")
+
+                # Transfer funds to sellers
+                for item in items:
+                    try:
+                        product = Product.objects.get(title=item.item)
+                        seller = product.user
+                        seller_wallet, _ = PTCCurrency.objects.get_or_create(user=seller)
+                        seller_wallet.balance += item.total
+                        seller_wallet.save()
+
+                        from core.models import PTCCurrencyTransaction
+                        PTCCurrencyTransaction.objects.create(
+                            user=seller,
+                            amount=item.total,
+                            transaction_type="credit",
+                            description=f"Sale of {product.title} to {request.user.username}",
+                        )
+                    except Product.DoesNotExist:
+                        continue
+
+                messages.success(
+                    request,
+                    f"Your order has been placed using PTC Bucks! Remaining balance: {buyer_wallet.balance - total_price}",
+                )
                 return redirect('core:home')
             else:
                 messages.error(request, "Insufficient PTC Bucks balance.")
                 return redirect('core:checkout')
 
-        # Fallback for other methods (COD, card, PayPal)
-        elif payment_method in ["cod", "card", "paypal"]:
-            order.paid_status = True
-            order.payment_method = payment_method
-            order.save()
-            messages.success(request, "Your order has been placed successfully!")
-            return redirect('core:home')
-
-        else:
-            messages.error(request, "Invalid payment method.")
-            return redirect('core:checkout')
-
-    # GET request – display checkout page
-    wallet = PTCCurrency.objects.get(user=request.user)
     context = {
         "items": items,
         "total_price": total_price,
-        "wallet_balance": wallet.balance,  # show PTC Bucks balance on checkout page
+        "wallet_balance": wallet.balance,
     }
     return render(request, "core/checkout.html", context)
 
@@ -236,3 +248,14 @@ def place_order_view(request):
         messages.success(request, "Order placed successfully!")
         return redirect("core:home")
     return redirect("core:checkout")
+
+def my_orders_view(request):
+    """
+    Displays all past orders the user has made.
+    TODO: Filter paid orders, show products, quantities, total spent, and order status.
+    """
+    orders = CartOrder.objects.filter(user=request.user, paid_status=True).order_by('-order_date')
+    context = {
+        "orders": orders,
+    }
+    return render(request, "core/my_orders.html", context)
