@@ -16,7 +16,7 @@ from core.utils import spend_ptc_bucks
 def base(request):
     return render(request, 'core/base.html',)
 
-def buyer(request):
+def profile(request):
     if not request.user.is_authenticated:
         messages.warning(request, "Must be logged in to view Profile.")
         return redirect('userauths:login')
@@ -248,6 +248,9 @@ def place_order_view(request):
         messages.success(request, "Order placed successfully!")
         return redirect("core:home")
     return redirect("core:checkout")
+
+def update_info(request):
+    pass
 
 def my_orders_view(request):
     """

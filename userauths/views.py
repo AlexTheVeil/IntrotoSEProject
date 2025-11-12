@@ -1,10 +1,11 @@
 from urllib import request
 from django.shortcuts import render, redirect
-from userauths.forms import UserLoginForm, UserRegisterForm
+from userauths.forms import UserLoginForm, UserRegisterForm, UserChangeForm, ChangePasswordForm
 from django.contrib.auth import login, authenticate, logout
 from django.contrib import messages
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from .forms import UpdateUserForm
 
 
 User = get_user_model()
@@ -60,3 +61,44 @@ def logout_view(request):
     logout(request)
     messages.success(request, "You have been logged out.")
     return redirect("userauths:login")
+
+def update_user(request):
+    if request.user.is_authenticated:
+        current_user = User.objects.get(id=request.user.id)
+        user_form = UpdateUserForm(request.POST or None, instance = current_user)
+
+        if user_form.is_valid():
+            user_form.save()
+
+            login(request, current_user)
+            messages.success(request, "User Has been Updated!!")
+            return redirect("core:home")
+        return render(request, "userauths/update_user.html", {'user_form':user_form})
+    else:
+        messages.error(request, "Must be logged in!!")
+        return redirect('core:home')
+    
+def update_password(request):
+    if request.user.is_authenticated:
+        current_user = request.user
+
+        if request.method == 'POST':
+            form = ChangePasswordForm(current_user, request.POST)
+            if form.is_valid():
+                form.save()
+                messages.success(request, "Your Password has been updated, Please Login...")
+                login(request, current_user)
+                return redirect('core:login')
+            else:
+                messages.error(request, "New Password does not meet requirements")
+                return redirect("userauths/update_password.html")
+        else:
+            form = ChangePasswordForm(current_user)
+            return render(request, "userauths/update_password.html", {'form':form})
+        
+    else:
+        messages.error(request, "Must be logged in!!")
+        return redirect('core:home')
+        
+
+    return render(request, "userauths/update_password.html",)

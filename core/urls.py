@@ -6,7 +6,7 @@ app_name = 'core'
 
 urlpatterns = [
    path("", views.home, name ="home"),
-   path("buyer/", views.buyer, name = "buyer"),
+   path("profile/", views.profile, name = "profile"),
    path("seller/", views.seller, name = "seller"),
    path("home/", views.home, name ="home"),
    path("product/<str:pid>/", views.product_detail_view, name="product_detail"),
@@ -16,5 +16,6 @@ urlpatterns = [
    path('cart/update/<int:item_id>/', views.update_cart_view, name='update_cart'),
    path('checkout/', views.checkout_view, name='checkout'),
    path('checkout/place-order/', views.place_order_view, name='place_order'),
+   path('update_info/', views.update_info, name = 'update_info'),
    path("my-orders/", views.my_orders_view, name="my_orders"),
 ]
