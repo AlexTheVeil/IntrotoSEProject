@@ -2,6 +2,7 @@
 
 from decimal import Decimal
 from core.models import PTCCurrency, PTCCurrencyTransaction
+from useradmin.decorators import custom_admin_required
 
 def spend_ptc_bucks(user, amount, description="Purchase"):
     amount = Decimal(amount)

@@ -2,6 +2,7 @@ from core.models import Category, Tags, Vendor, Product, ProductImages, CartOrde
 from userauths import models
 from .models import CartOrder, CartOrderItems
 from django.db.models import Sum
+from useradmin.decorators import custom_admin_required
 
 def cart_count(request):
     if request.user.is_authenticated:

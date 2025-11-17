@@ -3,6 +3,7 @@ from django.dispatch import receiver
 from django.conf import settings
 from userauths.models import User
 from core.models import PTCCurrency
+from useradmin.decorators import custom_admin_required
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_user_currency(sender, instance, created, **kwargs):

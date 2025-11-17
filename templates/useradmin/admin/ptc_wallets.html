@@ -1,0 +1,15 @@
+<h2>PTC Wallets</h2>
+
+<table>
+    <tr>
+        <th>User</th>
+        <th>Balance</th>
+    </tr>
+
+    {% for w in wallets %}
+    <tr>
+        <td>{{ w.user.username }}</td>
+        <td>{{ w.balance }}</td>
+    </tr>
+    {% endfor %}
+</table>

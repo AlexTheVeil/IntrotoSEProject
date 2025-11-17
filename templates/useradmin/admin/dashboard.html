@@ -1,0 +1,13 @@
+<h1>Admin Dashboard</h1>
+
+<ul>
+    <li>Total Users: {{ total_users }}</li>
+    <li>Total Products: {{ total_products }}</li>
+    <li>Total Orders: {{ total_orders }}</li>
+    <li>Total PTC Wallets: {{ total_wallets }}</li>
+</ul>
+
+<a href="{% url 'useradmin:admin_user_list' %}">Manage Users</a><br>
+<a href="{% url 'useradmin:admin_product_list' %}">Manage Products</a><br>
+<a href="{% url 'useradmin:admin_order_list' %}">Manage Orders</a><br>
+<a href="{% url 'useradmin:admin_ptc_dashboard' %}">Manage PTC Wallets</a><br>
