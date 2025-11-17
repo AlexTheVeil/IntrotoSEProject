@@ -7,7 +7,8 @@ from userauths.models import User
 from userauths.views import login_view, logout_view, Register_View
 from django.contrib import messages
 from useradmin.decorators import custom_admin_required
-
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth import authenticate, login
 import datetime
 
 # Create your views here.
@@ -153,3 +154,20 @@ def admin_order_list(request):
 def admin_ptc_dashboard(request):
     wallets = PTCCurrency.objects.all()
     return render(request, "useradmin/admin/ptc_wallets.html", {"wallets": wallets})
+
+def admin_login_view(request):
+    if request.user.is_authenticated and request.user.is_staff:
+        return redirect('useradmin:admin_dashboard')
+
+    if request.method == "POST":
+        username = request.POST.get("username")
+        password = request.POST.get("password")
+
+        user = authenticate(request, username=username, password=password)
+        if user is not None and user.is_staff:
+            login(request, user)
+            return redirect('useradmin:admin_dashboard')
+        else:
+            messages.error(request, "Invalid credentials or you are not an admin.")
+
+    return render(request, "useradmin/admin/login.html")
