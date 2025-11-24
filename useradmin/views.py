@@ -1,12 +1,14 @@
 from pyexpat.errors import messages
 from urllib import request
 from django.shortcuts import render, redirect, get_object_or_404
-from core.models import CartOrder, Product, Category, PTCCurrencyTransaction
+from core.models import CartOrder, Product, Category, PTCCurrencyTransaction, PTCCurrency
 from django.db.models import Sum
 from userauths.models import User
 from userauths.views import login_view, logout_view, Register_View
 from django.contrib import messages
-
+from useradmin.decorators import custom_admin_required
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth import authenticate, login
 import datetime
 
 # Create your views here.
@@ -121,3 +123,51 @@ def edit_product(request, pid):
         "categories": categories,
     }
     return render(request, "useradmin/edit_product.html", context)
+
+def admin_dashboard(request):
+    total_users = User.objects.count()
+    total_products = Product.objects.count()
+    total_orders = CartOrder.objects.count()
+    total_wallets = PTCCurrency.objects.count()
+
+    context = {
+        "total_users": total_users,
+        "total_products": total_products,
+        "total_orders": total_orders,
+        "total_wallets": total_wallets,
+    }
+
+    return render(request, "useradmin/admin/dashboard.html", context)
+
+def admin_user_list(request):
+    users = User.objects.all()
+    return render(request, "useradmin/admin/users.html", {"users": users})
+
+def admin_product_list(request):
+    products = Product.objects.all()
+    return render(request, "useradmin/admin/products.html", {"products": products})
+
+def admin_order_list(request):
+    orders = CartOrder.objects.all()
+    return render(request, "useradmin/admin/orders.html", {"orders": orders})
+
+def admin_ptc_dashboard(request):
+    wallets = PTCCurrency.objects.all()
+    return render(request, "useradmin/admin/ptc_wallets.html", {"wallets": wallets})
+
+def admin_login_view(request):
+    if request.user.is_authenticated and request.user.is_staff:
+        return redirect('useradmin:admin_dashboard')
+
+    if request.method == "POST":
+        username = request.POST.get("username")
+        password = request.POST.get("password")
+
+        user = authenticate(request, username=username, password=password)
+        if user is not None and user.is_staff:
+            login(request, user)
+            return redirect('useradmin:admin_dashboard')
+        else:
+            messages.error(request, "Invalid credentials or you are not an admin.")
+
+    return render(request, "useradmin/admin/login.html")

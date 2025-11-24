@@ -12,6 +12,7 @@ from django.db.models import Sum
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from core.utils import spend_ptc_bucks
+from useradmin.decorators import custom_admin_required
 
 def base(request):
     return render(request, 'core/base.html',)

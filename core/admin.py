@@ -1,5 +1,6 @@
 from django.contrib import admin
 from core.models import Category, Tags, Vendor, Product, ProductImages, CartOrder, CartOrderItems, ProductReview, Wishlist, Address, PTCCurrency
+from useradmin.decorators import custom_admin_required
 
 class ProductImagesAdmin(admin.TabularInline):
     model = ProductImages
