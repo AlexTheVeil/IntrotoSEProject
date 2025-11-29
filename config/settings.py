@@ -12,9 +12,13 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 import os
+from dotenv import load_dotenv
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+#Load our environmental variables
+load_dotenv()
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -25,7 +29,9 @@ SECRET_KEY = 'django-insecure-9sc3kuafsprw95#m@wug(#(1dk@yb#lhoneb2&p9grlursh0vd
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['introtoseproject-production.up.railway.app', 'https://introtoseproject-production.up.railway.app','127.0.0.1']
+CSRF_TRUSTED_ORIGINS = ['https://introtoseproject-production.up.railway.app']
+
 
 
 # Application definition
@@ -43,6 +49,7 @@ INSTALLED_APPS = [
     'core',
     'userauths',
     'useradmin',
+    'whitenoise.runserver_nostatic',
 ]
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -52,6 +59,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -84,10 +92,21 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        #sql local database
+        #'ENGINE': 'django.db.backends.sqlite3',
+        #'NAME': BASE_DIR / 'db.sqlite3',
+
+        #postgres cloud database
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'railway',
+        'USER': 'postgres',
+        'PASSWORD': os.environ['DB_PASSWORD_PP'],
+        'HOST': 'interchange.proxy.rlwy.net',
+        'PORT': '49138',
     }
 }
+#To switch between sqlite database and postgres database, just comment out which database
+#you don't want to use. Remember, info in one database is NOT stored or transfered to another
 
 
 # Password validation
@@ -135,6 +154,10 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
     BASE_DIR / 'core' / 'static',
 ]
+
+#white noise static stuff
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
