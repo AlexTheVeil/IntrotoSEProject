@@ -1,7 +1,7 @@
 from pyexpat.errors import messages
 from urllib import request
 from django.shortcuts import render, redirect, get_object_or_404
-from core.models import CartOrder, Product, Category, PTCCurrencyTransaction, PTCCurrency
+from core.models import CartOrder, Product, Category, PTCCurrencyTransaction, PTCCurrency, CartOrderItems, STATUS_CHOICE
 from django.db.models import Sum
 from userauths.models import User
 from userauths.views import login_view, logout_view, Register_View
@@ -9,7 +9,10 @@ from django.contrib import messages
 from useradmin.decorators import custom_admin_required
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import authenticate, login
+from django.contrib.auth.forms import UserChangeForm
+from django.forms import ModelForm
 import datetime
+from django import forms
 
 # Create your views here.
 
@@ -140,20 +143,122 @@ def admin_dashboard(request):
     return render(request, "useradmin/admin/dashboard.html", context)
 
 def admin_user_list(request):
-    users = User.objects.all()
-    return render(request, "useradmin/admin/users.html", {"users": users})
+    query = request.GET.get('q', '')  # Search query
+    if query:
+        users = User.objects.filter(username__icontains=query) | User.objects.filter(email__icontains=query)
+    else:
+        users = User.objects.all()
+    
+    context = {
+        'users': users,
+        'query': query
+    }
+    return render(request, 'useradmin/admin/users.html', context)
+
+def admin_delete_user(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    if request.method == "POST":
+        user.delete()
+        messages.success(request, f'User {user.username} deleted successfully.')
+        return redirect('useradmin:admin_user_list')
+    return render(request, 'useradmin/admin/confirm_delete.html', {'user': user})
+
+def admin_edit_user(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    if request.method == "POST":
+        form = UserChangeForm(request.POST, instance=user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'User {user.username} updated successfully.')
+            return redirect('useradmin:admin_user_list')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = UserChangeForm(instance=user)
+
+    context = {
+        'form': form,
+        'user_obj': user
+    }
+    return render(request, 'useradmin/admin/edit_user.html', context)
 
 def admin_product_list(request):
-    products = Product.objects.all()
-    return render(request, "useradmin/admin/products.html", {"products": products})
+    products = Product.objects.all().order_by('-date')
+    context = {
+        'products': products
+    }
+    return render(request, 'useradmin/admin/products.html', context)
+
+class ProductForm(ModelForm):
+    class Meta:
+        model = Product
+        fields = ['title', 'description', 'category', 'price', 'old_price', 
+                  'product_status', 'in_stock', 'featured', 'image', 'specifications']
+
+def admin_edit_product(request, pid):
+    product = get_object_or_404(Product, pid=pid)
+    if request.method == "POST":
+        form = ProductForm(request.POST, request.FILES, instance=product)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Product {product.title} updated successfully.')
+            return redirect('useradmin:admin_product_list')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = ProductForm(instance=product)
+
+    context = {'form': form, 'product_obj': product}
+    return render(request, 'useradmin/admin/edit_product.html', context)
+
+def admin_delete_product(request, pid):
+    product = get_object_or_404(Product, pid=pid)
+    product.delete()
+    messages.success(request, f'Product {product.title} deleted successfully.')
+    return redirect('useradmin:admin_product_list')
 
 def admin_order_list(request):
-    orders = CartOrder.objects.all()
-    return render(request, "useradmin/admin/orders.html", {"orders": orders})
+    orders = CartOrder.objects.all().order_by('-order_date')
+    context = {
+        'orders': orders
+    }
+    return render(request, 'useradmin/admin/orders.html', context)
+
+def admin_order_detail(request, order_id):
+    order = get_object_or_404(CartOrder, id=order_id)
+    items = CartOrderItems.objects.filter(order=order)
+    context = {
+        'order': order,
+        'items': items
+    }
+    return render(request, 'useradmin/admin/order_detail.html', context)
+
+class OrderStatusForm(forms.ModelForm):
+    class Meta:
+        model = CartOrder
+        fields = ['product_status']
+        widgets = {
+            'product_status': forms.Select(choices=STATUS_CHOICE)
+        }
+
+def admin_order_update(request, order_id):
+    order = get_object_or_404(CartOrder, id=order_id)
+    if request.method == "POST":
+        form = OrderStatusForm(request.POST, instance=order)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Order #{order.id} status updated successfully.")
+            return redirect('useradmin:admin_order_list')
+    else:
+        form = OrderStatusForm(instance=order)
+
+    context = {'form': form, 'order': order}
+    return render(request, 'useradmin/admin/order_update.html', context)
 
 def admin_ptc_dashboard(request):
-    wallets = PTCCurrency.objects.all()
-    return render(request, "useradmin/admin/ptc_wallets.html", {"wallets": wallets})
+    wallets = PTCWallet.objects.select_related('user').all()
+    context = {'wallets': wallets}
+    return render(request, 'useradmin/admin/ptc.html', context)
 
 def admin_login_view(request):
     if request.user.is_authenticated and request.user.is_staff:

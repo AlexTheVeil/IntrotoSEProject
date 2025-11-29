@@ -1,19 +1,39 @@
+{% extends "useradmin/admin/dashboard.html" %}
+{% block content %}
 <h2>Manage Users</h2>
 
-<table>
-    <tr>
-        <th>ID</th>
-        <th>Username</th>
-        <th>Email</th>
-        <th>Is Admin?</th>
-    </tr>
+<form method="get" action="">
+    <input type="text" name="q" placeholder="Search username or email" value="{{ query }}">
+    <button type="submit">Search</button>
+</form>
 
-    {% for user in users %}
-    <tr>
-        <td>{{ user.id }}</td>
-        <td>{{ user.username }}</td>
-        <td>{{ user.email }}</td>
-        <td>{{ user.is_custom_admin }}</td>
-    </tr>
-    {% endfor %}
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Staff</th>
+            <th>Active</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in users %}
+        <tr>
+            <td>{{ user.id }}</td>
+            <td>{{ user.username }}</td>
+            <td>{{ user.email }}</td>
+            <td>{{ user.is_staff }}</td>
+            <td>{{ user.is_active }}</td>
+            <td>
+                <a href="{% url 'useradmin:admin_edit_user' user.id %}">Edit</a> |
+                <a href="{% url 'useradmin:admin_delete_user' user.id %}">Delete</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6">No users found.</td></tr>
+        {% endfor %}
+    </tbody>
 </table>
+{% endblock %}

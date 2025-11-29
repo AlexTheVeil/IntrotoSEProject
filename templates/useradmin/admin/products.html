@@ -1,19 +1,33 @@
-<h2>Manage Products</h2>
+{% extends "useradmin/admin/dashboard.html" %}
+{% block content %}
+<h2>Products</h2>
 
 <table>
-    <tr>
-        <th>ID</th>
-        <th>Title</th>
-        <th>User</th>
-        <th>Price</th>
-    </tr>
-
-    {% for p in products %}
-    <tr>
-        <td>{{ p.id }}</td>
-        <td>{{ p.title }}</td>
-        <td>{{ p.user }}</td>
-        <td>{{ p.price }}</td>
-    </tr>
-    {% endfor %}
+    <thead>
+        <tr>
+            <th>Image</th>
+            <th>Title</th>
+            <th>Category</th>
+            <th>Price</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for product in products %}
+        <tr>
+            <td>{{ product.product_image|safe }}</td>
+            <td>{{ product.title }}</td>
+            <td>{{ product.category.title }}</td>
+            <td>${{ product.price }}</td>
+            <td>{{ product.product_status }}</td>
+            <td>
+                <a href="{% url 'useradmin:admin_edit_product' product.pid %}">Edit</a> |
+                <a href="{% url 'useradmin:admin_delete_product' product.pid %}">Delete</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
 </table>
+
+{% endblock %}
