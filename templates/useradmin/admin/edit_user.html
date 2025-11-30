@@ -1,0 +1,12 @@
+{% extends "useradmin/admin/dashboard.html" %}
+{% block content %}
+<h2>Edit User: {{ user_obj.username }}</h2>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <button type="submit">Save Changes</button>
+    <a href="{% url 'useradmin:admin_user_list' %}">Cancel</a>
+</form>
+{% endblock %}

@@ -22,12 +22,17 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path("templates/core/", include("django.contrib.auth.urls")),
+    # Mount Django's built-in auth URLs under /user/ so paths like
+    # /user/login/ and /user/logout/ are available.
+    path('user/', include('django.contrib.auth.urls')),
     path('', include('core.urls')),
     path("", base),
-    path("user/", include("userauths.urls")),
+    # Authentication URLs (single include with namespace)
     path('userauths/', include(('userauths.urls', 'userauths'), namespace='userauths')),
-    path("useradmin/", include("useradmin.urls")),
+
+    # Admin panel for vendors/site admins — include with namespace so
+    # `{% url 'useradmin:...' %}` works in templates.
+    path("useradmin/", include(('useradmin.urls', 'useradmin'), namespace='useradmin')),
 ]
 
 if settings.DEBUG:

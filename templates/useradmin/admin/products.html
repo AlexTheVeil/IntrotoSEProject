@@ -1,19 +1,55 @@
-<h2>Manage Products</h2>
+{% extends "useradmin/admin/dashboard.html" %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold">Manage Products</h2>
+        <a href="{% url 'useradmin:admin_dashboard' %}" class="btn btn-secondary">Back</a>
+    </div>
 
-<table>
-    <tr>
-        <th>ID</th>
-        <th>Title</th>
-        <th>User</th>
-        <th>Price</th>
-    </tr>
-
-    {% for p in products %}
-    <tr>
-        <td>{{ p.id }}</td>
-        <td>{{ p.title }}</td>
-        <td>{{ p.user }}</td>
-        <td>{{ p.price }}</td>
-    </tr>
-    {% endfor %}
-</table>
+    {% if products %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Preview</th>
+                    <th>Title</th>
+                    <th>Vendor</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                    <th>Submitted</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in products %}
+                <tr>
+                    <td style="width:100px;">
+                        {% if p.image %}
+                        <img src="{{ p.image.url }}" alt="{{ p.title }}" class="img-fluid rounded" style="height:60px; object-fit:cover;">
+                        {% else %}
+                        <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height:60px;">No Image</div>
+                        {% endif %}
+                    </td>
+                    <td>{{ p.title }}</td>
+                    <td>{{ p.user.username }}</td>
+                    <td>${{ p.price }}</td>
+                    <td>{{ p.product_status|capfirst }}</td>
+                    <td>{{ p.date|date:"M d, Y" }}</td>
+                    <td class="text-end">
+                        <a href="{% url 'useradmin:admin_product_approve' p.pid %}" class="btn btn-sm btn-success me-2">Approve</a>
+                        <a href="{% url 'useradmin:admin_product_deny' p.pid %}" class="btn btn-sm btn-warning me-2">Reject</a>
+                        <form action="{% url 'useradmin:admin_delete_product' p.pid %}" method="post" class="d-inline" onsubmit="return confirm('Delete this product? This cannot be undone.');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <div class="alert alert-info">No products found.</div>
+    {% endif %}
+</div>
+{% endblock %}
