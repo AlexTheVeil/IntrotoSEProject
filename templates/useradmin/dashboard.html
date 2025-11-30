@@ -40,6 +40,16 @@
             </a>
         </div>
 
+        <!-- Vendor RSS feed -->
+        <div class="mb-4">
+            <h5>Vendor Order Feed</h5>
+            <p class="text-muted">Subscribe to this feed to receive new-order notifications for your products.</p>
+            <div class="d-flex align-items-center">
+                <input type="text" readonly class="form-control me-2" value="{{ request.scheme }}://{{ request.get_host }}{% url 'useradmin:vendor_order_feed' request.user.id vendor_feed_token %}" id="vendorFeedUrl">
+                <button class="btn btn-outline-primary" onclick="navigator.clipboard.writeText(document.getElementById('vendorFeedUrl').value).then(()=>alert('Feed URL copied'))">Copy</button>
+            </div>
+        </div>
+
         <!-- Product Cards -->
         <div class="row">
            {% for product in products %}
@@ -60,6 +70,12 @@
                             <a href="{% url 'useradmin:edit_product' pid=product.pid %}" class="btn btn-warning btn-sm text-dark">
                                 <i class="bi bi-pencil-square"></i> Edit
                             </a>
+                            {% if product.product_status == 'rejected' %}
+                            <form action="{% url 'useradmin:seller_delete_product' product.pid %}" method="post" class="d-inline ms-2" onsubmit="return confirm('Delete this rejected product? This cannot be undone.');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                            </form>
+                            {% endif %}
                             {% else %}
                             <span class="text-muted small">Invalid Product ID</span>
                             {% endif %}

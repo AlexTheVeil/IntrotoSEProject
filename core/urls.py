@@ -7,6 +7,7 @@ app_name = 'core'
 urlpatterns = [
    path("", views.home, name ="home"),
    path("profile/", views.profile, name = "profile"),
+   path("claim-daily/", views.claim_daily_ptc, name="claim_daily"),
    path("seller/", views.seller, name = "seller"),
    path("home/", views.home, name ="home"),
    path("product/<str:pid>/", views.product_detail_view, name="product_detail"),
