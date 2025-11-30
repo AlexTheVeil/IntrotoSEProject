@@ -93,21 +93,21 @@ def home(request):
     else:
         # Only show active products, newest first
         # Only show active and published products
-    products = Product.objects.filter(status=True, product_status="published").order_by('-date')
+        products = Product.objects.filter(status=True, product_status="published").order_by('-date')
 
-    # allow filtering by tag (slug passed as ?tag=slug)
-    tag_slug = request.GET.get('tag')
-    if tag_slug:
-        products = products.filter(tags__slug=tag_slug)
+        # allow filtering by tag (slug passed as ?tag=slug)
+        tag_slug = request.GET.get('tag')
+        if tag_slug:
+            products = products.filter(tags__slug=tag_slug)
 
-    # all tags for tag cloud/listing
-    all_tags = Tags.objects.all()
+        # all tags for tag cloud/listing
+        all_tags = Tags.objects.all()
 
-    context = {
-        'products': products,
-        'all_tags': all_tags,
-    }
-    return render(request, 'core/home.html', context)
+        context = {
+            'products': products,
+            'all_tags': all_tags,
+        }
+        return render(request, 'core/home.html', context)
 
 
 def product_detail_view(request, pid):
