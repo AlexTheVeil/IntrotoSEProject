@@ -28,13 +28,23 @@ def seller(request):
     return render(request, 'useradmin/dashboard.html',)
 
 def home(request):
-    # Only show active products, newest first
-    products = Product.objects.filter(status=True).order_by('-date')
+    if not request.user.is_authenticated:
+        # Only show active products, newest first
+        products = Product.objects.filter(status=True).order_by('-date')
 
-    context = {
-        'products': products,
-    }
-    return render(request, 'core/home.html', context)
+        context = {
+            'products': products,
+        }
+        return render(request, 'core/home_lo.html', context)
+    else:
+        # Only show active products, newest first
+        products = Product.objects.filter(status=True).order_by('-date')
+
+        context = {
+            'products': products,
+        }
+        return render(request, 'core/home.html', context)
+
 
 def product_detail_view(request, pid):
     product = Product.objects.get(pid=pid)
