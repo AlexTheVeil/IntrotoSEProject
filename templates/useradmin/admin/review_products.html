@@ -1,0 +1,49 @@
+{% extends "useradmin/admin/dashboard.html" %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold">Products Pending Approval</h2>
+        <a href="{% url 'useradmin:admin_dashboard' %}" class="btn btn-secondary">Back to Admin</a>
+    </div>
+
+    {% if products %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Preview</th>
+                    <th>Title</th>
+                    <th>Vendor</th>
+                    <th>Category</th>
+                    <th>Submitted On</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                <tr>
+                    <td style="width:120px;">
+                        {% if product.image %}
+                        <img src="{{ product.image.url }}" alt="{{ product.title }}" class="img-fluid rounded" style="height:60px; object-fit:cover;">
+                        {% else %}
+                        <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height:60px;">No Image</div>
+                        {% endif %}
+                    </td>
+                    <td>{{ product.title }}</td>
+                    <td>{{ product.user.username }}</td>
+                    <td>{{ product.category.title }}</td>
+                    <td>{{ product.date|date:"M d, Y H:i" }}</td>
+                    <td class="text-end">
+                        <a href="{% url 'useradmin:admin_product_approve' product.pid %}" class="btn btn-sm btn-success me-2">Approve</a>
+                        <a href="{% url 'useradmin:admin_product_deny' product.pid %}" class="btn btn-sm btn-danger">Deny</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <div class="alert alert-info">There are no products pending approval.</div>
+    {% endif %}
+</div>
+{% endblock %}

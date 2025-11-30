@@ -49,7 +49,19 @@
 
   
   <main class="max-w-5xl mx-auto px-4 py-8">
-    {% block content %}{% endblock %}
+    {% block content %}
+    <div class="bg-white rounded shadow p-6">
+      <h2 class="text-lg font-semibold mb-2">Your Wallet</h2>
+      <p class="mb-4">Balance: <strong>${{ wallet.balance|floatformat:2 }}</strong></p>
+      <form method="post" action="{% url 'core:claim_daily' %}">
+        {% csrf_token %}
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Claim Daily PTC Bucks</button>
+      </form>
+      {% if wallet.daily_streak %}
+        <p class="text-sm text-gray-500 mt-3">Daily streak: {{ wallet.daily_streak }}</p>
+      {% endif %}
+    </div>
+    {% endblock %}
   </main>
 
   <footer class="text-center text-xs text-gray-500 py-6">© {{ now|date:"Y" }} Pablo's Tech Company</footer>

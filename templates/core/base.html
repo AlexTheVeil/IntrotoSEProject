@@ -24,7 +24,7 @@
         <a href="/user/logout/">Logout</a>
         <a href="/cart/">Cart{% if cart_count %} ({{ cart_count }}){% endif %}</a>
         <a href="/useradmin/dashboard/">Seller Dashboard</a>
-        <a href ="/buyer/">Profile</a>
+        <a href="{% url 'core:profile' %}">Profile</a>
         <a href="{% url 'useradmin:admin_login' %}">Admin</a>
       </nav>
     </div>

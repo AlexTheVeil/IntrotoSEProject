@@ -7,7 +7,10 @@ def custom_admin_required(view_func):
             messages.error(request, "Login required.")
             return redirect("userauths:login")
 
-        if not getattr(request.user, "is_custom_admin", False):
+        # Use Django's staff flag for admin access. This will allow
+        # any user with `is_staff=True` (or superusers) to access
+        # the admin panel. Previously this checked a custom flag.
+        if not getattr(request.user, "is_staff", False):
             messages.error(request, "You do not have permission to access this panel.")
             return redirect("core:home")
 

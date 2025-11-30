@@ -1,7 +1,9 @@
 from decimal import Decimal
 import json
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse
+from django.http import HttpResponseNotAllowed
+from django.conf import settings
+from django.http import HttpResponse, Http404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import models
@@ -12,6 +14,7 @@ from django.db.models import Sum
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from core.utils import spend_ptc_bucks
+from core.utils import notify_vendors_of_order
 from useradmin.decorators import custom_admin_required
 
 def base(request):
@@ -22,22 +25,88 @@ def profile(request):
         messages.warning(request, "Must be logged in to view Profile.")
         return redirect('userauths:login')
     else:
-        return render(request, 'core/buyer_dashboard.html',)
+        # Provide wallet info for the dashboard (PTC Bucks)
+        wallet, _ = PTCCurrency.objects.get_or_create(user=request.user)
+        return render(request, 'core/buyer_dashboard.html', {'wallet': wallet})
+
+
+@login_required
+def claim_daily_ptc(request):
+    from django.utils import timezone
+    from datetime import timedelta
+    from core.utils import add_ptc_bucks
+
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(['POST'])
+
+    wallet, _ = PTCCurrency.objects.get_or_create(user=request.user)
+    now = timezone.now()
+
+    DAILY_AMOUNT = getattr(settings, 'PTC_DAILY_REWARD', 500)
+
+    # use configurable window from settings for easier testing
+    window_hours = float(getattr(settings, 'PTC_DAILY_WINDOW_HOURS', 24))
+    if wallet.last_daily_claim:
+        elapsed = now - wallet.last_daily_claim
+        if elapsed < timedelta(hours=window_hours):
+            # Not yet eligible
+            remaining = timedelta(hours=window_hours) - elapsed
+            hours = int(remaining.total_seconds() // 3600)
+            minutes = int((remaining.total_seconds() % 3600) // 60)
+            seconds = int(remaining.total_seconds() % 60)
+            messages.info(request, f"You already claimed your daily reward. Try again in {hours}h {minutes}m {seconds}s.")
+            return redirect('core:profile')
+
+    # Award using helper (updates DB)
+    add_ptc_bucks(request.user, DAILY_AMOUNT, description="Daily check-in reward")
+
+    # Refresh wallet from DB to avoid overwriting the updated balance
+    wallet.refresh_from_db()
+
+    # Report the current balance in a message so it's obvious the DB updated
+    messages.info(request, f"Wallet balance after claim: {wallet.balance}")
+
+    # update streak: if last claim within 48 hours, increment, else reset to 1
+    if wallet.last_daily_claim and (now - wallet.last_daily_claim) < timedelta(hours=48):
+        wallet.daily_streak = wallet.daily_streak + 1
+    else:
+        wallet.daily_streak = 1
+
+    wallet.last_daily_claim = now
+    wallet.save()
+
+    messages.success(request, f"You claimed {DAILY_AMOUNT} PTC Bucks! Current streak: {wallet.daily_streak}.")
+    return redirect('core:profile')
 
 def seller(request):
     return render(request, 'useradmin/dashboard.html',)
 
 def home(request):
     # Only show active products, newest first
-    products = Product.objects.filter(status=True).order_by('-date')
+    # Only show active and published products
+    products = Product.objects.filter(status=True, product_status="published").order_by('-date')
+
+    # allow filtering by tag (slug passed as ?tag=slug)
+    tag_slug = request.GET.get('tag')
+    if tag_slug:
+        products = products.filter(tags__slug=tag_slug)
+
+    # all tags for tag cloud/listing
+    all_tags = Tags.objects.all()
 
     context = {
         'products': products,
+        'all_tags': all_tags,
     }
     return render(request, 'core/home.html', context)
 
 def product_detail_view(request, pid):
-    product = Product.objects.get(pid=pid)
+    # fetch product; allow owner or staff to preview non-published products
+    product = get_object_or_404(Product, pid=pid)
+
+    if product.product_status != 'published':
+        if not request.user.is_authenticated or not (request.user.is_staff or request.user == product.user):
+            raise Http404("Product not found")
 
     context = {
         'product': product,
@@ -47,11 +116,24 @@ def product_detail_view(request, pid):
 
 def search_view(request):
     query = request.GET.get('q')
-    products = Product.objects.filter(Q(title__icontains=query) | Q(description__icontains=query), status=True).order_by('-date')
+    # Only search published products
+    products = Product.objects.filter(
+        (Q(title__icontains=query) | Q(description__icontains=query)),
+        status=True,
+        product_status="published",
+    ).order_by('-date')
+
+    # allow tag filtering on search results
+    tag_slug = request.GET.get('tag')
+    if tag_slug:
+        products = products.filter(tags__slug=tag_slug)
+
+    all_tags = Tags.objects.all()
 
     context = {
         'products': products,
         'query': query,
+        'all_tags': all_tags,
     }
     return render(request, 'core/search.html', context)
 
@@ -72,6 +154,7 @@ def add_to_cart_view(request, pid):
         item=product.title,
         defaults={
             'invoice_no': f'INV{order.id}{product.pid}',
+            'product': product,
             'image': product.image.url if product.image else '',
             'price': product.price,
             'qty': qty,
@@ -217,6 +300,8 @@ def checkout_view(request):
                     request,
                     f"Your order has been placed using PTC Bucks! Remaining balance: {buyer_wallet.balance - total_price}",
                 )
+                # Notify vendors about this order
+                notify_vendors_of_order(order)
                 return redirect('core:home')
             else:
                 messages.error(request, "Insufficient PTC Bucks balance.")
@@ -245,6 +330,9 @@ def place_order_view(request):
         order.address = address
         order.paid_status = True  # mark as paid / processed
         order.save()
+
+        # Notify vendors about this order
+        notify_vendors_of_order(order)
 
         messages.success(request, "Order placed successfully!")
         return redirect("core:home")

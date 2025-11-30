@@ -11,6 +11,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.forms import UserChangeForm
 from django.forms import ModelForm
+from django.core import signing
 import datetime
 from django import forms
 
@@ -44,6 +45,8 @@ def dashboard_view(request):
         'montly_revenue': montly_revenue,
         'products' : products,
         'ptc_credits': ptc_credits,
+        # signed token for vendor-specific RSS feed
+        'vendor_feed_token': signing.dumps({'user_id': request.user.id}),
     }
     
     return render(request, "useradmin/dashboard.html", context)
@@ -78,6 +81,18 @@ def add_product_view(request):
             user=request.user  # set current user
         )
         product.save()
+
+        # handle tags (comma separated)
+        tags_input = request.POST.get('tags', '')
+        if tags_input:
+            tag_names = [t.strip() for t in tags_input.split(',') if t.strip()]
+            tag_objs = []
+            from core.models import Tags
+            for tn in tag_names:
+                tag_obj, _ = Tags.objects.get_or_create(name=tn)
+                tag_objs.append(tag_obj)
+            if tag_objs:
+                product.tags.set(tag_objs)
 
         messages.success(request, f"Product '{title}' added successfully!")
         return redirect('useradmin:dashboard')
@@ -116,7 +131,19 @@ def edit_product(request, pid):
 
         if image:
             product.image = image
-
+        # handle tags update
+        tags_input = request.POST.get('tags', '')
+        if tags_input:
+            tag_names = [t.strip() for t in tags_input.split(',') if t.strip()]
+            tag_objs = []
+            from core.models import Tags
+            for tn in tag_names:
+                tag_obj, _ = Tags.objects.get_or_create(name=tn)
+                tag_objs.append(tag_obj)
+            product.tags.set(tag_objs)
+        else:
+            # clear tags if field empty
+            product.tags.clear()
         product.save()
         messages.success(request, f"Product '{product.title}' updated successfully.")
         return redirect("useradmin:dashboard")
@@ -138,31 +165,42 @@ def admin_dashboard(request):
         "total_products": total_products,
         "total_orders": total_orders,
         "total_wallets": total_wallets,
+        "pending_count": Product.objects.filter(product_status="in_review").count(),
     }
 
     return render(request, "useradmin/admin/dashboard.html", context)
 
+@custom_admin_required
 def admin_user_list(request):
-    query = request.GET.get('q', '')  # Search query
+    query = request.GET.get('q', '')  # Search query from admin UI
     if query:
-        users = User.objects.filter(username__icontains=query) | User.objects.filter(email__icontains=query)
+        users = (User.objects.filter(username__icontains=query) |
+                 User.objects.filter(email__icontains=query)).distinct().order_by('-date_joined')
     else:
-        users = User.objects.all()
-    
+        users = User.objects.all().order_by('-date_joined')
+
     context = {
         'users': users,
         'query': query
     }
     return render(request, 'useradmin/admin/users.html', context)
 
+
+@custom_admin_required
 def admin_delete_user(request, user_id):
     user = get_object_or_404(User, id=user_id)
     if request.method == "POST":
+        # Prevent deleting self
+        if request.user.id == user.id:
+            messages.error(request, "You cannot delete your own account.")
+            return redirect('useradmin:admin_user_list')
         user.delete()
         messages.success(request, f'User {user.username} deleted successfully.')
         return redirect('useradmin:admin_user_list')
     return render(request, 'useradmin/admin/confirm_delete.html', {'user': user})
 
+
+@custom_admin_required
 def admin_edit_user(request, user_id):
     user = get_object_or_404(User, id=user_id)
     if request.method == "POST":
@@ -182,6 +220,28 @@ def admin_edit_user(request, user_id):
     }
     return render(request, 'useradmin/admin/edit_user.html', context)
 
+
+@custom_admin_required
+def admin_toggle_user_staff(request, user_id):
+    # Toggle a user's is_staff status (promote/demote) — admin only
+    if request.method != 'POST':
+        messages.error(request, "Invalid request method.")
+        return redirect('useradmin:admin_user_list')
+
+    # Prevent demoting yourself accidentally
+    if request.user.id == user_id:
+        messages.error(request, "You cannot change your own admin status.")
+        return redirect('useradmin:admin_user_list')
+
+    target = get_object_or_404(User, id=user_id)
+    # Toggle is_staff
+    target.is_staff = not bool(target.is_staff)
+    target.save()
+    status = 'promoted to admin' if target.is_staff else 'demoted from admin'
+    messages.success(request, f"User '{target.username}' has been {status}.")
+    return redirect('useradmin:admin_user_list')
+
+@custom_admin_required
 def admin_product_list(request):
     products = Product.objects.all().order_by('-date')
     context = {
@@ -211,10 +271,16 @@ def admin_edit_product(request, pid):
     context = {'form': form, 'product_obj': product}
     return render(request, 'useradmin/admin/edit_product.html', context)
 
+@custom_admin_required
 def admin_delete_product(request, pid):
+    # Admin-only deletion of any product
+    if request.method != 'POST':
+        messages.error(request, "Invalid request method.")
+        return redirect('useradmin:admin_product_list')
+
     product = get_object_or_404(Product, pid=pid)
     product.delete()
-    messages.success(request, f'Product {product.title} deleted successfully.')
+    messages.success(request, f"Product '{product.title}' was deleted.")
     return redirect('useradmin:admin_product_list')
 
 def admin_order_list(request):
@@ -256,7 +322,7 @@ def admin_order_update(request, order_id):
     return render(request, 'useradmin/admin/order_update.html', context)
 
 def admin_ptc_dashboard(request):
-    wallets = PTCWallet.objects.select_related('user').all()
+    wallets = PTCCurrency.objects.select_related('user').all()
     context = {'wallets': wallets}
     return render(request, 'useradmin/admin/ptc.html', context)
 
@@ -276,3 +342,44 @@ def admin_login_view(request):
             messages.error(request, "Invalid credentials or you are not an admin.")
 
     return render(request, "useradmin/admin/login.html")
+
+def admin_review_products(request):
+    products = Product.objects.filter(product_status="in_review")
+    context = {"products": products}
+    return render(request, "useradmin/admin/review_products.html", context)
+
+def admin_product_approve(request, pid):
+    product = get_object_or_404(Product, pid=pid)
+    product.product_status = "published"
+    product.save()
+    messages.success(request, f"Product '{product.title}' approved and published.")
+    return redirect("useradmin:admin_review_products")
+
+def admin_product_deny(request, pid):
+    product = get_object_or_404(Product, pid=pid)
+    product.product_status = "rejected"
+    product.save()
+    messages.success(request, f"Product '{product.title}' has been denied.")
+    return redirect("useradmin:admin_review_products")
+
+
+@login_required
+def seller_delete_product(request, pid):
+    # Allow product owner to delete their rejected product to free up space
+    product = get_object_or_404(Product, pid=pid)
+    if product.user != request.user:
+        messages.error(request, "You don't have permission to delete this product.")
+        return redirect('useradmin:dashboard')
+
+    if request.method != 'POST':
+        messages.error(request, "Invalid request method.")
+        return redirect('useradmin:dashboard')
+
+    # Only allow deletion if product was rejected (or owner explicitly wants to remove)
+    if product.product_status != 'rejected':
+        messages.error(request, "Only rejected products can be removed here.")
+        return redirect('useradmin:dashboard')
+
+    product.delete()
+    messages.success(request, f"Product '{product.title}' has been removed.")
+    return redirect('useradmin:dashboard')
