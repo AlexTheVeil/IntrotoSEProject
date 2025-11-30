@@ -16,6 +16,18 @@
     <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-r hover:bg-blue-700">Search</button>
 </form>
 
+{% if all_tags %}
+<div class="mb-4">
+    <strong>Filter by tag:</strong>
+    <div class="mt-2">
+        <a href="{% url 'core:search' %}?q={{ query|urlencode }}" class="inline-block px-2 py-1 bg-gray-200 rounded mr-2">All</a>
+        {% for tag in all_tags %}
+            <a href="?q={{ query|urlencode }}&tag={{ tag.slug }}" class="inline-block px-2 py-1 bg-gray-100 rounded mr-2 hover:bg-gray-200">{{ tag.name }}</a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
 {% if products %}
 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
     {% for product in products %}

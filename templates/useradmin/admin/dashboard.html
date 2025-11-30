@@ -76,6 +76,12 @@
             <a href="{% url 'useradmin:admin_product_list' %}">Products</a>
             <a href="{% url 'useradmin:admin_order_list' %}">Orders</a>
             <a href="{% url 'useradmin:admin_ptc_dashboard' %}">PTC Wallets</a>
+            <a href="{% url 'useradmin:admin_review_products' %}">
+                Pending Products
+                {% if pending_count %}
+                    <span class="badge bg-danger">{{ pending_count }}</span>
+                {% endif %}
+            </a>            
         </div>
 
         <div class="sidebar-section">
@@ -88,6 +94,7 @@
 
     <!-- Main content -->
     <div class="main-content">
+        {% block content %}
         <h1 class="mb-4">Dashboard Overview</h1>
 
         <div class="row g-4 mb-4">
@@ -108,6 +115,11 @@
                         <div class="card-icon text-success mb-2">📦</div>
                         <h5 class="card-title">Total Products</h5>
                         <p class="card-text fs-4">{{ total_products }}</p>
+                        {% if pending_count %}
+                        <p class="mt-2">
+                            <span class="badge bg-danger">Pending: {{ pending_count }}</span>
+                        </p>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -133,6 +145,7 @@
             </div>
         </div>
     </div>
+    {% endblock %}
 
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>

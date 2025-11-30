@@ -3,6 +3,7 @@ from django.conf import settings
 from shortuuid.django_fields import ShortUUIDField  # pip install shortuuid
 from django.utils.html import mark_safe
 from django.contrib.auth.models import User
+from django.utils.text import slugify
 
 #NOTE: remember to pip install Pillow !!!
 
@@ -39,13 +40,35 @@ class Category(models.Model):
         verbose_name_plural = "Categories"
 
     def category_image(self):
-        return mark_safe(f'<img src="{self.image.url}" width="50" height="50" />')
+        # Safely return an <img> tag only if an image file is present
+        if self.image and getattr(self.image, 'url', None):
+            return mark_safe(f'<img src="{self.image.url}" width="50" height="50" />')
+        return ""
         
     def __str__(self):
         return self.title
         
 class Tags(models.Model):
-    pass
+    name = models.CharField(max_length=50, unique=True)
+    slug = models.SlugField(max_length=60, unique=True, blank=True)
+
+    class Meta:
+        verbose_name = 'Tag'
+        verbose_name_plural = 'Tags'
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+            # ensure uniqueness
+            base = self.slug
+            i = 1
+            while Tags.objects.filter(slug=self.slug).exclude(pk=self.pk).exists():
+                self.slug = f"{base}-{i}"
+                i += 1
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
         
 class Vendor(models.Model):
     vid = ShortUUIDField(unique=True, primary_key=True)
@@ -69,7 +92,10 @@ class Vendor(models.Model):
         verbose_name_plural = "Vendors"
 
     def vendor_image(self):
-        return mark_safe(f'<img src="{self.image.url}" width="50" height="50" />')
+        # Safely return an <img> tag only if an image file is present
+        if self.image and getattr(self.image, 'url', None):
+            return mark_safe(f'<img src="{self.image.url}" width="50" height="50" />')
+        return ""
         
     def __str__(self):
         return self.title
@@ -88,7 +114,7 @@ class Product(models.Model):
     old_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     
     specifications = models.TextField(null=True, blank=True, default="No specifications provided")
-    tags = models.ForeignKey(Tags, on_delete=models.CASCADE, null=True, blank=True)
+    tags = models.ManyToManyField(Tags, blank=True)
 
     product_status = models.CharField(max_length=20, choices=STATUS, default="in_review")
 
@@ -105,7 +131,10 @@ class Product(models.Model):
         verbose_name_plural = "Products"
 
     def product_image(self):
-        return mark_safe(f'<img src="{self.image.url}" width="50" height="50" />')
+        # Safely return an <img> tag only if an image file is present
+        if self.image and getattr(self.image, 'url', None):
+            return mark_safe(f'<img src="{self.image.url}" width="50" height="50" />')
+        return ""
         
     def __str__(self):
         return self.title
@@ -137,6 +166,7 @@ class CartOrder(models.Model):
 
 class CartOrderItems(models.Model):
     order = models.ForeignKey(CartOrder, on_delete=models.CASCADE)
+    product = models.ForeignKey('Product', on_delete=models.SET_NULL, null=True, blank=True)
     invoice_no = models.CharField(max_length=100)
     product_status = models.CharField(max_length=200)
     item = models.CharField(max_length=200)
@@ -197,6 +227,9 @@ class Address(models.Model):
 class PTCCurrency(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    # Track last daily claim time and streak for a simple daily check-in reward
+    last_daily_claim = models.DateTimeField(null=True, blank=True)
+    daily_streak = models.IntegerField(default=0)
 
     def __str__(self):
         return f"{self.user.username} - {self.balance} PTC Bucks"

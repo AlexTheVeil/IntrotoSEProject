@@ -1,0 +1,22 @@
+<html>
+  <body>
+    <p>Hello {{ vendor.username }},</p>
+    <p>You have a new order (#{{ order.id }}) that includes the following items of yours:</p>
+    <ul>
+      {% for ci in items %}
+        <li>
+          {% if ci.product %}
+            {{ ci.product.title }}
+          {% else %}
+            {{ ci.item }}
+          {% endif %}
+          — qty {{ ci.qty }} — ${{ ci.total }}
+        </li>
+      {% endfor %}
+    </ul>
+    <p><strong>Total for your items: ${{ vendor_total }}</strong></p>
+    <p>Buyer: {% if order.user %}{{ order.user.username }}{% else %}Guest{% endif %}</p>
+    <p>View orders in your vendor dashboard by logging into the site and visiting your dashboard.</p>
+    <p>Thanks,<br/>The Team</p>
+  </body>
+</html>

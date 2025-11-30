@@ -1,0 +1,33 @@
+{% extends "useradmin/admin/dashboard.html" %}
+{% block content %}
+<h2>Order #{{ order.id }} Details</h2>
+<p>User: {{ order.user.username }}</p>
+<p>Total Price: ${{ order.price }}</p>
+<p>Status: {{ order.product_status }}</p>
+<p>Order Date: {{ order.order_date }}</p>
+
+<h3>Items</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Item</th>
+            <th>Image</th>
+            <th>Quantity</th>
+            <th>Price</th>
+            <th>Total</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in items %}
+        <tr>
+            <td>{{ item.item }}</td>
+            <td><img src="/media/{{ item.image }}" width="50" height="50"/></td>
+            <td>{{ item.qty }}</td>
+            <td>${{ item.price }}</td>
+            <td>${{ item.total }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<a href="{% url 'useradmin:admin_order_list' %}">Back to Orders</a>
+{% endblock %}
