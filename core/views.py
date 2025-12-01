@@ -84,10 +84,20 @@ def seller(request):
 def home(request):
     if not request.user.is_authenticated:
         # Only show active products, newest first
-        products = Product.objects.filter(status=True).order_by('-date')
+        # Only show active and published products
+        products = Product.objects.filter(status=True, product_status="published").order_by('-date')
+
+        # allow filtering by tag (slug passed as ?tag=slug)
+        tag_slug = request.GET.get('tag')
+        if tag_slug:
+            products = products.filter(tags__slug=tag_slug)
+
+        # all tags for tag cloud/listing
+        all_tags = Tags.objects.all()
 
         context = {
             'products': products,
+            'all_tags': all_tags,
         }
         return render(request, 'core/home_lo.html', context)
     else:
@@ -351,6 +361,7 @@ def place_order_view(request):
 def update_info(request):
     pass
 
+@login_required
 def my_orders_view(request):
     """
     Displays all past orders the user has made.
@@ -361,3 +372,13 @@ def my_orders_view(request):
         "orders": orders,
     }
     return render(request, "core/my_orders.html", context)
+
+@login_required
+def order_detail(request, order_number):
+    order = get_object_or_404(
+        CartOrder,
+        order_number=order_number,
+        user=request.user
+    )
+
+    return render(request, "core/order_detail.html", {"order": order})

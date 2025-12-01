@@ -1,0 +1,37 @@
+{% extends 'core/base.html' %}
+{% block content %}
+<h2>Order #{{ order.order_number }}</h2>
+
+<p><strong>Status:</strong> {{ order.status }}</p>
+<p><strong>Order Date:</strong> {{ order.created_at|date:"Y-m-d H:i" }}</p>
+<p><strong>Total Amount:</strong> ${{ order.total_amount }}</p>
+
+<hr>
+
+<h3>Items</h3>
+
+<table>
+    <thead>
+        <tr>
+            <th>Product</th>
+            <th>Qty</th>
+            <th>Price</th>
+            <th>Subtotal</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for item in order.items.all %}
+        <tr>
+            <td>{{ item.product_name }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>${{ item.price }}</td>
+            <td>${{ item.subtotal }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<hr>
+
+<a href="{% url 'my_orders' %}">Back to Orders</a>
+{% endblock %}
