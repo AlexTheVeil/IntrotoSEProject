@@ -361,6 +361,7 @@ def place_order_view(request):
 def update_info(request):
     pass
 
+@login_required
 def my_orders_view(request):
     """
     Displays all past orders the user has made.
@@ -371,3 +372,13 @@ def my_orders_view(request):
         "orders": orders,
     }
     return render(request, "core/my_orders.html", context)
+
+@login_required
+def order_detail(request, order_number):
+    order = get_object_or_404(
+        CartOrder,
+        order_number=order_number,
+        user=request.user
+    )
+
+    return render(request, "core/order_detail.html", {"order": order})

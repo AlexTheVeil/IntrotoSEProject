@@ -30,9 +30,11 @@
 
 {%if user.is_authenticated %}
   <li>
-      <u1 class="dropdown-menu" aria-labelledby="navbarDropdown">
-          <li><a class="dropdown-item" href="/user/update_user/"
+      <u1 class="btn-outline" aria-labelledby="navbarDropdown">
+          <li><a class="btn-outline" href="/userauths/update_user/"
           >User Profile</a></li>
+          <li><a class="btn-outline" href="/my_orders/"
+          >Orders</a></li>
       </u1>
   </li>
   {% endif %}
