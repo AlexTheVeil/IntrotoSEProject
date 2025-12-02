@@ -160,6 +160,7 @@ class CartOrder(models.Model):
     paid_status = models.BooleanField(default=False)
     order_date = models.DateTimeField(auto_now_add=True)
     product_status = models.CharField(max_length=20, choices=STATUS_CHOICE, default="processing")
+    status = models.CharField(max_length=50, default='pending')
 
     class Meta:
         verbose_name_plural = "Cart Order"
