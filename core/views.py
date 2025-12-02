@@ -373,12 +373,12 @@ def my_orders_view(request):
     }
     return render(request, "core/my_orders.html", context)
 
-@login_required
-def order_detail(request, order_number):
-    order = get_object_or_404(
-        CartOrder,
-        order_number=order_number,
-        user=request.user
-    )
+# @login_required
+# def order_detail(request, order_number):
+#     order = get_object_or_404(
+#         CartOrder,
+#         order_number=order_number,
+#         user=request.user
+#     )
 
-    return render(request, "core/order_detail.html", {"order": order})
+#     return render(request, "core/order_detail.html", {"order": order})
