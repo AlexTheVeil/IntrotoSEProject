@@ -21,7 +21,7 @@ urlpatterns = [
     path("admin-panel/products/edit/<str:pid>/", views.admin_edit_product, name="admin_edit_product"),
     path("admin-panel/products/delete/<str:pid>/", views.admin_delete_product, name="admin_delete_product"),
     # vendor RSS feed (signed token ensures only recipient of token can access)
-    # path('feeds/vendor/<int:user_id>/<str:token>/', VendorOrderFeed(), name='vendor_order_feed'),  # Temporarily commented out
+    path('feeds/vendor/<int:user_id>/<str:token>/', views.vendor_order_feed, name='vendor_order_feed'),
     path("admin-panel/orders/", views.admin_order_list, name="admin_order_list"),
     path("admin-panel/orders/<int:order_id>/", views.admin_order_detail, name="admin_order_detail"),
     path("admin-panel/orders/<int:order_id>/update/", views.admin_order_update, name="admin_order_update"),
