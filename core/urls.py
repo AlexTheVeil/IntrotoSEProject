@@ -19,5 +19,6 @@ urlpatterns = [
    path('checkout/place-order/', views.place_order_view, name='place_order'),
    path('update_info/', views.update_info, name = 'update_info'),
    path("my_orders/", views.my_orders_view, name="my_orders"),
+   path("my_orders/refund/<int:order_id>/", views.refund_order_view, name="refund_order"),
    # path("my_orders/my_orders/<str:order_number>/", views.order_detail, name="order_detail"),
 ]

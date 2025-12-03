@@ -1,7 +1,7 @@
 from django.urls import path
 from useradmin import views
 from .views import login_view, logout_view, Register_View
-from .feeds import VendorOrderFeed
+# from .feeds import VendorOrderFeed  # Temporarily commented out for testing
 
 app_name = "useradmin"
 
@@ -15,11 +15,13 @@ urlpatterns = [
     path("admin-panel/users/delete/<int:user_id>/", views.admin_delete_user, name="admin_delete_user"),
     path("admin-panel/users/edit/<int:user_id>/", views.admin_edit_user, name="admin_edit_user"),
     path("admin-panel/users/toggle-admin/<int:user_id>/", views.admin_toggle_user_staff, name="admin_toggle_user_staff"),
+    path("admin-panel/users/ban/<int:user_id>/", views.admin_ban_user, name="admin_ban_user"),
+    path("admin-panel/users/unban/<int:user_id>/", views.admin_unban_user, name="admin_unban_user"),
     path("admin-panel/products/", views.admin_product_list, name="admin_product_list"),
     path("admin-panel/products/edit/<str:pid>/", views.admin_edit_product, name="admin_edit_product"),
     path("admin-panel/products/delete/<str:pid>/", views.admin_delete_product, name="admin_delete_product"),
     # vendor RSS feed (signed token ensures only recipient of token can access)
-    path('feeds/vendor/<int:user_id>/<str:token>/', VendorOrderFeed(), name='vendor_order_feed'),
+    # path('feeds/vendor/<int:user_id>/<str:token>/', VendorOrderFeed(), name='vendor_order_feed'),  # Temporarily commented out
     path("admin-panel/orders/", views.admin_order_list, name="admin_order_list"),
     path("admin-panel/orders/<int:order_id>/", views.admin_order_detail, name="admin_order_detail"),
     path("admin-panel/orders/<int:order_id>/update/", views.admin_order_update, name="admin_order_update"),

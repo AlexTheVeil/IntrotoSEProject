@@ -22,6 +22,11 @@ def dashboard_view(request):
         messages.warning(request, "Must be logged in to view Seller Dashboard.")
         return redirect('userauths:login')
     
+    # Prevent admins from accessing seller dashboard
+    if request.user.is_staff or request.user.is_superuser:
+        messages.error(request, "Admins cannot access the seller dashboard. Use the admin panel instead.")
+        return redirect('useradmin:admin_dashboard')
+    
     products = Product.objects.filter(user=request.user)
     revenue = CartOrder.objects.aggregate(price=Sum('price'))
     total_orders_count = CartOrder.objects.all()
@@ -239,6 +244,33 @@ def admin_toggle_user_staff(request, user_id):
     target.save()
     status = 'promoted to admin' if target.is_staff else 'demoted from admin'
     messages.success(request, f"User '{target.username}' has been {status}.")
+    return redirect('useradmin:admin_user_list')
+
+@custom_admin_required
+def admin_ban_user(request, user_id):
+    """Ban a user from the website"""
+    user = get_object_or_404(User, id=user_id)
+    if request.method == "POST":
+        # Prevent banning self
+        if request.user.id == user.id:
+            messages.error(request, "You cannot ban your own account.")
+            return redirect('useradmin:admin_user_list')
+        
+        user.is_banned = True
+        user.save()
+        messages.success(request, f'User {user.username} has been banned.')
+        return redirect('useradmin:admin_user_list')
+    return redirect('useradmin:admin_user_list')
+
+@custom_admin_required
+def admin_unban_user(request, user_id):
+    """Unban a user from the website"""
+    user = get_object_or_404(User, id=user_id)
+    if request.method == "POST":
+        user.is_banned = False
+        user.save()
+        messages.success(request, f'User {user.username} has been unbanned.')
+        return redirect('useradmin:admin_user_list')
     return redirect('useradmin:admin_user_list')
 
 @custom_admin_required
