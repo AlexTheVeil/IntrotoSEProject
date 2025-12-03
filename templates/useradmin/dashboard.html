@@ -42,11 +42,13 @@
 
         <!-- Vendor RSS feed -->
         <div class="mb-4">
-            <h5>Vendor Order Feed</h5>
-            <p class="text-muted">Subscribe to this feed to receive new-order notifications for your products.</p>
+            <h5>Vendor Order Feed (RSS)</h5>
+            <p class="text-muted">Subscribe to this feed in your RSS reader to receive new-order notifications for your products.</p>
             <div class="d-flex align-items-center">
                 <input type="text" readonly class="form-control me-2" value="{{ request.scheme }}://{{ request.get_host }}{% url 'useradmin:vendor_order_feed' request.user.id vendor_feed_token %}" id="vendorFeedUrl">
-                <button class="btn btn-outline-primary" onclick="navigator.clipboard.writeText(document.getElementById('vendorFeedUrl').value).then(()=>alert('Feed URL copied'))">Copy</button>
+                <button class="btn btn-outline-primary" onclick="navigator.clipboard.writeText(document.getElementById('vendorFeedUrl').value).then(()=>alert('Feed URL copied to clipboard!'))">
+                    <i class="bi bi-clipboard"></i> Copy URL
+                </button>
             </div>
         </div>
 

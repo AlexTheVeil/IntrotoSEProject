@@ -415,3 +415,58 @@ def seller_delete_product(request, pid):
     product.delete()
     messages.success(request, f"Product '{product.title}' has been removed.")
     return redirect('useradmin:dashboard')
+
+
+from django.http import HttpResponse
+from django.utils import timezone
+from django.core import signing
+
+def vendor_order_feed(request, user_id, token):
+    """
+    RSS feed for vendor-specific orders.
+    Returns an RSS XML feed of orders containing the vendor's products.
+    """
+    try:
+        # Verify the signed token
+        data = signing.loads(token, max_age=None)
+        if data.get('user_id') != user_id:
+            return HttpResponse("Invalid token", status=403)
+    except signing.BadSignature:
+        return HttpResponse("Invalid token", status=403)
+    
+    # Get the vendor/seller
+    vendor = get_object_or_404(User, id=user_id)
+    
+    # Get orders that contain the vendor's products
+    vendor_products = Product.objects.filter(user=vendor)
+    order_items = CartOrderItems.objects.filter(product__in=vendor_products).select_related('order')
+    orders = CartOrder.objects.filter(id__in=order_items.values_list('order_id', flat=True)).order_by('-order_date')[:20]
+    
+    # Build RSS XML
+    rss_items = []
+    for order in orders:
+        items = CartOrderItems.objects.filter(order=order, product__in=vendor_products)
+        item_list = ", ".join([f"{item.item} (qty: {item.qty})" for item in items])
+        
+        rss_items.append(f"""
+        <item>
+            <title>New Order #{order.id}</title>
+            <description>Order placed on {order.order_date.strftime('%Y-%m-%d %H:%M:%S')}. Items: {item_list}</description>
+            <link>{request.build_absolute_uri('/useradmin/dashboard/')}</link>
+            <guid isPermaLink="false">order-{order.id}</guid>
+            <pubDate>{order.order_date.strftime('%a, %d %b %Y %H:%M:%S +0000')}</pubDate>
+        </item>
+        """)
+    
+    rss_content = f"""<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+    <channel>
+        <title>Orders for {vendor.username}</title>
+        <description>New order notifications for vendor {vendor.username}</description>
+        <link>{request.build_absolute_uri('/useradmin/dashboard/')}</link>
+        <lastBuildDate>{timezone.now().strftime('%a, %d %b %Y %H:%M:%S +0000')}</lastBuildDate>
+        {"".join(rss_items)}
+    </channel>
+</rss>"""
+    
+    return HttpResponse(rss_content, content_type="application/rss+xml")
