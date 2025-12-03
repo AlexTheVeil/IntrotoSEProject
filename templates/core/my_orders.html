@@ -1,33 +1,72 @@
 {% extends 'core/base.html' %}
+{% load static %}
+
 {% block content %}
-<h2>My Orders</h2>
-{% if orders %}
-    <table>
-        <thead>
-            <tr>
-                <th>Order #</th>
-                <th>Total</th>
-                <th>Date</th>
-                <td>
-                    <!-- <a href="my_orders/<str:order_number>/">View Details</a> -->
-                </td>
-            </tr>
-        </thead>
-        <tbody>
-        {% for order in orders %}
-            <tr>
-                <td>{{ order.order_number }}</td>
-                <td>${{ order.total_amount }}</td>
-                <td>{{ order.created_at|date:"Y-m-d H:i" }}</td>
-            </tr>
+<div class="max-w-5xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6">My Order History</h1>
+    
+    {% if order_data %}
+        {% for data in order_data %}
+        <div class="bg-white rounded-lg shadow-md mb-6 overflow-hidden">
+            <div class="bg-blue-600 text-white p-4">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h5 class="text-xl font-semibold mb-2">Order #{{ data.order.id }} - {{ data.order.order_date|date:"F d, Y" }}</h5>
+                        <p class="text-sm">Status: <span class="bg-blue-800 px-2 py-1 rounded">{{ data.order.product_status }}</span></p>
+                    </div>
+                    <div class="text-right">
+                        <h4 class="text-2xl font-bold mb-2">{{ data.calculated_total }} PTC</h4>
+                        <form method="POST" action="{% url 'core:refund_order' data.order.id %}" class="inline">
+                            {% csrf_token %}
+                            <button type="submit" 
+                                    class="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold px-4 py-2 rounded transition" 
+                                    onclick="return confirm('Are you sure you want to refund this order? This will delete the order and return {{ data.calculated_total }} PTC to your wallet.');">
+                                🔄 Refund Order
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4">
+                <h6 class="font-semibold mb-3">Order Items ({{ data.total_items }} item{{ data.total_items|pluralize }})</h6>
+                <div class="overflow-x-auto">
+                    <table class="w-full border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100 border-b">
+                                <th class="text-left p-3">Image</th>
+                                <th class="text-left p-3">Product</th>
+                                <th class="text-left p-3">Quantity</th>
+                                <th class="text-left p-3">Price</th>
+                                <th class="text-left p-3">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in data.items %}
+                            <tr class="border-b hover:bg-gray-50">
+                                <td class="p-3">
+                                    {% if item.image %}
+                                        <img src="/media/{{ item.image }}" alt="{{ item.item }}" class="w-12 h-12 object-cover rounded">
+                                    {% else %}
+                                        <div class="w-12 h-12 bg-gray-300 rounded"></div>
+                                    {% endif %}
+                                </td>
+                                <td class="p-3">{{ item.item }}</td>
+                                <td class="p-3">{{ item.qty }}</td>
+                                <td class="p-3">{{ item.price }} PTC</td>
+                                <td class="p-3 font-semibold">{{ item.total }} PTC</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
         {% endfor %}
-        </tbody>
-    </table>
-{% else %}
-    <p>You have no orders yet.</p>
-{% endif %}
-
-<br/><br/>
-<a href= "/profile/">Back to Profile</a>
-
+    {% else %}
+        <div class="bg-blue-50 border border-blue-300 rounded-lg p-6">
+            <h4 class="text-xl font-semibold mb-2">No orders yet!</h4>
+            <p>You haven't placed any orders. <a href="{% url 'core:home' %}" class="text-blue-600 hover:underline">Start shopping now!</a></p>
+        </div>
+    {% endif %}
+</div>
 {% endblock %}

@@ -19,9 +19,17 @@ from django.urls import path, include
 from core.views import base
 from django.conf import settings
 from django.conf.urls.static import static
+from django.shortcuts import redirect
+from django.contrib import messages
+from django.http import HttpResponseRedirect
+
+def disabled_admin(request):
+    """Disable django admin access"""
+    messages.error(request, "Django admin is disabled. Please use the custom admin panel.")
+    return HttpResponseRedirect('/')
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('admin/', disabled_admin),
     # Mount Django's built-in auth URLs under /user/ so paths like
     # /user/login/ and /user/logout/ are available.
     path('user/', include('django.contrib.auth.urls')),

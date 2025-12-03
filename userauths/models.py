@@ -6,6 +6,7 @@ class User(AbstractUser):
     username = models.CharField(max_length=100)
     bio = models.TextField(blank=True, null=True)
     is_custom_admin = models.BooleanField(default=False)
+    is_banned = models.BooleanField(default=False)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']

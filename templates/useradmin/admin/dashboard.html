@@ -75,7 +75,6 @@
             <a href="{% url 'useradmin:admin_user_list' %}">Users</a>
             <a href="{% url 'useradmin:admin_product_list' %}">Products</a>
             <a href="{% url 'useradmin:admin_order_list' %}">Orders</a>
-            <a href="{% url 'useradmin:admin_ptc_dashboard' %}">PTC Wallets</a>
             <a href="{% url 'useradmin:admin_review_products' %}">
                 Pending Products
                 {% if pending_count %}
@@ -86,7 +85,6 @@
 
         <div class="sidebar-section">
             <h5>Quick Links</h5>
-            <a href="{% url 'useradmin:add_product' %}">Add Product</a>
             <a href="{% url 'useradmin:dashboard' %}">Dashboard Home</a>
             <a href="{% url 'userauths:logout' %}">Logout</a>
         </div>

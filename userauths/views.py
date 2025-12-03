@@ -36,6 +36,9 @@ def Register_View(request):
 def login_view(request):
     if request.user.is_authenticated:
         messages.warning(request, "Already Logged In.")
+        # Redirect admins to admin dashboard
+        if request.user.is_staff or request.user.is_superuser:
+            return redirect("useradmin:admin_dashboard")
         return redirect("core:home")
     
     if request.method == "POST":
@@ -46,8 +49,18 @@ def login_view(request):
 
             user = authenticate(request, email=email, password=password)
             if user is not None:
+                # Check if user is banned
+                if user.is_banned:
+                    messages.error(request, "Your account has been banned. Please contact support.")
+                    return redirect("userauths:login")
+                
                 login(request, user)
                 messages.success(request, f"Welcome back, {user.username}!")
+                
+                # Redirect admins to admin dashboard
+                if user.is_staff or user.is_superuser:
+                    return redirect("useradmin:admin_dashboard")
+                
                 return redirect("core:home")
             else:
                 messages.warning(request, "Invalid email or password.")

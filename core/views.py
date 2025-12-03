@@ -7,7 +7,7 @@ from django.http import HttpResponse, Http404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import models
-from core.models import Category, Tags, Vendor, Product, ProductImages, CartOrder, CartOrderItems, ProductReview, Wishlist, Address, PTCCurrency
+from core.models import Category, Tags, Vendor, Product, ProductImages, CartOrder, CartOrderItems, ProductReview, Wishlist, Address, PTCCurrency, PTCCurrencyTransaction
 from django.db.models import Q
 from django.http import JsonResponse, HttpResponseNotAllowed
 from django.db.models import Sum
@@ -137,11 +137,18 @@ def product_detail_view(request, pid):
 def search_view(request):
     query = request.GET.get('q')
     # Only search published products
-    products = Product.objects.filter(
-        (Q(title__icontains=query) | Q(description__icontains=query)),
-        status=True,
-        product_status="published",
-    ).order_by('-date')
+    if query:
+        products = Product.objects.filter(
+            (Q(title__icontains=query) | Q(description__icontains=query)),
+            status=True,
+            product_status="published",
+        ).order_by('-date')
+    else:
+        # No query, show all published products
+        products = Product.objects.filter(
+            status=True,
+            product_status="published",
+        ).order_by('-date')
 
     # allow tag filtering on search results
     tag_slug = request.GET.get('tag')
@@ -364,14 +371,75 @@ def update_info(request):
 @login_required
 def my_orders_view(request):
     """
-    Displays all past orders the user has made.
-    TODO: Filter paid orders, show products, quantities, total spent, and order status.
+    Displays all past orders the user has made with full details.
     """
     orders = CartOrder.objects.filter(user=request.user, paid_status=True).order_by('-order_date')
+    
+    # Get order items for each order
+    order_data = []
+    for order in orders:
+        items = CartOrderItems.objects.filter(order=order)
+        # Calculate actual order total from items
+        calculated_total = sum(item.price * item.qty for item in items)
+        order_data.append({
+            'order': order,
+            'items': items,
+            'total_items': items.count(),
+            'calculated_total': calculated_total,  # Pass the calculated total
+        })
+    
     context = {
-        "orders": orders,
+        "order_data": order_data,
     }
     return render(request, "core/my_orders.html", context)
+
+
+@login_required
+def refund_order_view(request, order_id):
+    """
+    Refund an order: delete the order and return PTC currency to user's wallet.
+    """
+    if request.method == "POST":
+        try:
+            order = get_object_or_404(CartOrder, id=order_id, user=request.user)
+            
+            # Calculate refund amount from order items (price * qty for each item)
+            order_items = CartOrderItems.objects.filter(order=order)
+            refund_amount = sum(item.price * item.qty for item in order_items)
+            
+            # If no items or total is 0, try using order.price as fallback
+            if refund_amount == 0:
+                refund_amount = order.price
+            
+            # Get user's PTC wallet
+            ptc_wallet, created = PTCCurrency.objects.get_or_create(user=request.user)
+            
+            # Store original balance for debugging
+            original_balance = ptc_wallet.balance
+            
+            # Return PTC to wallet
+            ptc_wallet.balance += refund_amount
+            ptc_wallet.save()
+            
+            # Create transaction record
+            PTCCurrencyTransaction.objects.create(
+                user=request.user,
+                amount=refund_amount,
+                transaction_type='credit',
+                description=f'Refund for order #{order.id}'
+            )
+            
+            # Delete the order (cascade will delete order items)
+            order.delete()
+            
+            messages.success(request, f"Order refunded successfully! {refund_amount} PTC has been returned to your wallet. New balance: {ptc_wallet.balance} PTC (was {original_balance} PTC)")
+            return redirect("core:my_orders")
+        except Exception as e:
+            messages.error(request, f"Error processing refund: {str(e)}")
+            return redirect("core:my_orders")
+    
+    return redirect("core:my_orders")
+
 
 # @login_required
 # def order_detail(request, order_number):
